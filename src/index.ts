@@ -11,16 +11,12 @@ Array.prototype[Symbol.asyncIterator] = () => {
             return new Promise(res => setTimeout(() => res(++i), 200))
                 .then(res => ({
                     done: i > 2,
-                    value: new Set([new Set([i])])
+                    value: i + 10
                 }))
         }
     }
 };
 
-const iter = new Iter([1], 'async');
+const iter = new Iter([1, 2], 'async');
 
-(async function() {
-    for await (const el of iter.flatMap(el => el)) {
-        console.log(el)
-    }
-})();
+iter.collect(new Set()).then(console.log);

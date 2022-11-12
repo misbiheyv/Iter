@@ -2,6 +2,7 @@ import type {
 
     Optional,
     Modes,
+    Collection,
 
 } from './interface';
 
@@ -24,7 +25,7 @@ import {
     flattenAsync,
     flatMapSync,
     flatMapAsync,
-    take
+    take,
 
 } from './modifiers';
 
@@ -33,9 +34,18 @@ import {
     sum,
     avg,
     max,
-    min
+    min,
 
 } from './aggregators';
+
+import {
+
+    toArray,
+    collect,
+
+} from './collectors';
+
+
 
 export default class Iter<T> {
 
@@ -127,10 +137,10 @@ export default class Iter<T> {
             : sum(<AsyncIterableIterator<number>>this.#asyncIter);
     }
 
-    public avg(): Promise<number> {
+    public avg(round: (num: number) => number = (el => el)): Promise<number> {
         return this.#mode === 'sync' 
-            ? avg(<IterableIterator<number>>this.#iter) 
-            : avg(<AsyncIterableIterator<number>>this.#asyncIter);
+            ? avg(<IterableIterator<number>>this.#iter, round) 
+            : avg(<AsyncIterableIterator<number>>this.#asyncIter, round);
     }
 
     public max(): Promise<number> {
@@ -151,6 +161,18 @@ export default class Iter<T> {
         return this.#mode === 'sync' 
             ? take(this.#iter, count) 
             : take(this.#asyncIter, count);
+    }
+
+    public toArray(): Promise<Array<T>> {
+        return this.#mode === 'sync' 
+            ? toArray(this.#iter)
+            : toArray(this.#asyncIter);
+    }
+
+    public collect(collection: Collection<T> | Array<T>): Promise<Array<T> | Collection<T>> {
+        return this.#mode === 'sync' 
+            ? collect(this.#iter, collection)
+            : collect(this.#asyncIter, collection);
     }
 
     [Symbol.iterator](): IterableIterator<T> {
