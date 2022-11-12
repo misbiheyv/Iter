@@ -28,6 +28,13 @@ import {
 
 } from './modifiers';
 
+import {
+
+    sum,
+    avg
+
+} from './aggregators';
+
 export default class Iter<T> {
 
     get iter() {
@@ -110,6 +117,20 @@ export default class Iter<T> {
             ? flattenAsync(this.#asyncIter, depth)
             : flattenSync(this.#iter, depth);
     }
+
+
+    public sum(): Promise<number> {
+        return this.#mode === 'sync' 
+            ? sum(<IterableIterator<number>>this.#iter)
+            : sum(<AsyncIterableIterator<number>>this.#asyncIter);
+    }
+
+    public avg(): Promise<number> {
+        return this.#mode === 'sync' 
+            ? avg(<IterableIterator<number>>this.#iter) 
+            : avg(<AsyncIterableIterator<number>>this.#asyncIter);
+    }
+
 
     public take(count: number): IterableIterator<T> | AsyncIterableIterator<T> {
         return this.#mode === 'sync' 
