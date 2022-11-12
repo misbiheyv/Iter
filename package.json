@@ -1,9 +1,11 @@
 {
-  "name": "Iter",
+  "name": "iter",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "watch": "npx tsc --watch"
+    "build": "tsc",
+    "watch": "tsc --watch",
+		"serve": "tsc && node --es-module-specifier-resolution=node dist/index.js"
   },
   "keywords": [],
   "author": "misbiheyv",
