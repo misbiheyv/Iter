@@ -31,7 +31,9 @@ import {
 import {
 
     sum,
-    avg
+    avg,
+    max,
+    min
 
 } from './aggregators';
 
@@ -129,6 +131,19 @@ export default class Iter<T> {
         return this.#mode === 'sync' 
             ? avg(<IterableIterator<number>>this.#iter) 
             : avg(<AsyncIterableIterator<number>>this.#asyncIter);
+    }
+
+    public max(): Promise<number> {
+        return this.#mode === 'sync' 
+            ? max(<IterableIterator<number>>this.#iter) 
+            : max(<AsyncIterableIterator<number>>this.#asyncIter);
+    
+    }
+
+    public min(): Promise<number> {
+        return this.#mode === 'sync' 
+            ? min(<IterableIterator<number>>this.#iter) 
+            : min(<AsyncIterableIterator<number>>this.#asyncIter);
     }
 
 
