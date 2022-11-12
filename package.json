@@ -1,0 +1,14 @@
+{
+  "name": "Iter",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "watch": "npx tsc --watch"
+  },
+  "keywords": [],
+  "author": "misbiheyv",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
