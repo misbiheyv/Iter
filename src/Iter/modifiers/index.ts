@@ -12,7 +12,7 @@ import {Modes} from "../interface";
 
 export function mapSync<R, V>(
     iter: IterableIterator<V>,
-    cb: (el: V, index?: number, iter?: typeof this.iter) => R
+    cb: (el: V, index?: number, iter?: unknown) => R
 ): Iter<R> {
     let
         i = 0;
@@ -25,7 +25,7 @@ export function mapSync<R, V>(
             let cur = iter.next();
 
             return {
-                value: !cur.done ? cb(cur.value, i++, this.iter) : undefined,
+                value: !cur.done ? cb(cur.value, i++, iter) : undefined,
                 done: cur.done
             };
         }
@@ -36,7 +36,7 @@ export function mapSync<R, V>(
 
 export function mapAsync<R, V>(
     iter: AsyncIterableIterator<V>,
-    cb: (el: V, index?: number, iter?: typeof this.asyncIter) => R
+    cb: (el: V, index?: number, iter?: unknown) => R
 ): Iter<R> {
     let
         i = 0;
@@ -52,7 +52,7 @@ export function mapAsync<R, V>(
                 }
                 return {
                     done: false,
-                    value: cb(res.value, i++, this.asyncIter)
+                    value: cb(res.value, i++, iter)
                 }
             })
         }
@@ -65,7 +65,7 @@ export function mapAsync<R, V>(
 
 export function filterSync<V>(
     iter: IterableIterator<V>,
-    cb: (el: V, index?: number, iter?: typeof this.iter) => boolean
+    cb: (el: V, index?: number, iter?: unknown) => boolean
 ): Iter<V> {
     let i = 0;
 
@@ -76,7 +76,7 @@ export function filterSync<V>(
         next: () => {
             let cur = iter.next();
 
-            while (!cur.done && !cb(cur.value, i++, this.iter)) {
+            while (!cur.done && !cb(cur.value, i++, iter)) {
                 cur = iter.next();
             }
 
@@ -89,15 +89,15 @@ export function filterSync<V>(
 
 export function filterAsync<V>(
     iter: AsyncIterableIterator<V>,
-    cb: (el: V, index?: number, iter?: typeof this.asyncIter) => boolean
+    cb: (el: V, index?: number, iter?: unknown) => boolean
 ): Iter<V> {
     let i = 0;
 
-    const filterIter = <AsyncIterable<V>>(async function *(self) {
+    const filterIter = <AsyncIterable<V>>(async function *() {
         for await (const el of iter) {
-            if(cb(<V>el, i++, self.asyncIter)) yield el
+            if(cb(<V>el, i++, iter)) yield el
         }
-    })(this)
+    })()
 
     return new Iter(filterIter, 'async');
 }
@@ -151,7 +151,7 @@ export function flattenAsync<R>(
 
 export function flatMapSync<T, R>(
     iter: IterableIterator<T>,
-    cb: (el: unknown, index?: number, iter?: typeof this.iter) => R
+    cb: (el: unknown, index?: number, iter?: unknown) => R
 ) : Iter<R> {
 
     function *flatMapIter(arr: Iterable<unknown | Iterable<unknown>>) {
@@ -168,7 +168,7 @@ export function flatMapSync<T, R>(
 
 export function flatMapAsync<T, R>(
     iter: AsyncIterableIterator<T>,
-    cb: (el: unknown, index?: number, iter?: typeof this.asyncIter) => R
+    cb: (el: unknown, index?: number, iter?: unknown) => R
 ) : Iter<R> {
 
     function *syncFlatMapIter(arr: Iterable<unknown | Iterable<unknown> | AsyncIterable<unknown>>) {
@@ -204,11 +204,12 @@ export function flatMapAsync<T, R>(
 export function take<T>(
     iter: IterableIterator<T> | AsyncIterableIterator<T>,
     count: number,
-    mode: Modes = 'sync'
+    mode?: Modes
 ): Iter<T> {
+
     let i = 0;
 
-    if (isSyncIterable(iter) && mode === 'sync') {
+    if (isSyncIterable(iter) || mode === 'sync') {
         return new Iter(<Iterable<T>>{
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
@@ -222,7 +223,7 @@ export function take<T>(
         })
     }
 
-    if (mode === 'async' && isAsyncIterable(iter)) {
+    if (mode === 'async' || isAsyncIterable(iter)) {
         return new Iter(<AsyncIterable<T>>{
             [Symbol.asyncIterator]() {
                 return this;

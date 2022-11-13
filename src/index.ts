@@ -1,6 +1,6 @@
 import Iter from "./Iter/Iter/iter";
 
-Array.prototype[Symbol.asyncIterator] = () => {
+const createAsyncIter = (count = 3) => {
     let i = 0;
 
     return {
@@ -8,19 +8,20 @@ Array.prototype[Symbol.asyncIterator] = () => {
             return this;
         },
         next: () => {
-            return new Promise(res => setTimeout(() => res(++i), 200))
+            return new Promise(res => setTimeout(() => res(++i), 50))
                 .then(res => ({
-                    done: i > 2,
-                    value: i + 10
+                    done: i > count,
+                    value: i
                 }))
         }
     }
 };
 
-const iter = new Iter([1, 2]);
+const iter = new Iter(createAsyncIter(5)).take(3);
 
-(async () => {
-    for await (const el of iter.flatMap(el => el)) {
-        console.log(el)
-    }
-})()
+//
+// (async () => {
+//     const
+//         res = [],
+//         it = new Iter(createAsyncIter(5)).take(3);
+// })()

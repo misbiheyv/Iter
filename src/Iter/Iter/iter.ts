@@ -56,13 +56,14 @@ export default class Iter<T> {
 
     protected iter: Optional<IterableIterator<T>>;
 
-    constructor(iterable: Iterable<T> | AsyncIterable<T>, mode: Modes = 'sync') {
-        this.mode = mode
-
+    constructor(iterable: Iterable<T> | AsyncIterable<T>, mode?: Modes) {
         if (isAsyncIterable(iterable)) {
+            this.mode = mode ?? 'async';
             this.asyncIter = intoAsyncIterator(iterable);
         }
+
         if (isSyncIterable(iterable)) {
+            this.mode = mode ?? 'sync';
             this.iter = intoIterator(iterable);
         }
     }
