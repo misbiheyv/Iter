@@ -1,4 +1,4 @@
-import Iter from '../Iter';
+import Iter from '../Iter/Iter';
 
 import {
 

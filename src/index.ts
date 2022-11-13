@@ -1,4 +1,4 @@
-import Iter from "./Iter/Iter";
+import Iter from "./Iter/Iter/Iter";
 
 Array.prototype[Symbol.asyncIterator] = () => {
     let i = 0;
