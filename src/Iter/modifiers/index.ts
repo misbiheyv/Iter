@@ -1,4 +1,4 @@
-import Iter from '../Iter/Iter';
+import Iter from '../Iter/iter';
 
 import {
 
@@ -6,6 +6,7 @@ import {
     isAsyncIterable
 
 } from '../../helpers';
+import {Modes} from "../interface";
 
 
 
@@ -196,39 +197,42 @@ export function flatMapAsync<T, R>(
         }
     }
 
-    return asyncFlatMapIter(iter)
+    return new Iter(asyncFlatMapIter(iter), 'async')
 }
 
 
 export function take<T>(
     iter: IterableIterator<T> | AsyncIterableIterator<T>,
-    count: number
-): IterableIterator<T> | AsyncIterableIterator<T> {
+    count: number,
+    mode: Modes = 'sync'
+): Iter<T> {
     let i = 0;
 
-    if (isSyncIterable(iter)) {
-        return {
+    if (isSyncIterable(iter) && mode === 'sync') {
+        return new Iter(<Iterable<T>>{
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
-            next: (): IteratorResult<T> => {
+            next: () => {
                 if (i++ < count) {
-                    return this.iter.next()
+                    return iter.next()
                 }
                 return {done: true, value: undefined};
             }
-        }
+        })
     }
 
-    return {
-        [Symbol.asyncIterator]() {
-            return this;
-        },
-        next: () => {
-            if (i++ < count) {
-                return this.asyncIter.next()
+    if (mode === 'async' && isAsyncIterable(iter)) {
+        return new Iter(<AsyncIterable<T>>{
+            [Symbol.asyncIterator]() {
+                return this;
+            },
+            next: () => {
+                if (i++ < count) {
+                    return iter.next()
+                }
+                return Promise.resolve({done: true, value: undefined});
             }
-            return Promise.resolve({done: true, value: undefined});
-        }
+        })
     }
 }

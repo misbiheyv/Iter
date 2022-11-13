@@ -48,7 +48,7 @@ import {
 
 } from '../aggregators';
 
-export default class Iter<T> implements AbstractIter<T> {
+export default class Iter<T> {
 
     protected mode: Modes;
 
@@ -124,7 +124,7 @@ export default class Iter<T> implements AbstractIter<T> {
             : flattenSync(this.iter, depth);
     }
 
-    public take(count: number): IterableIterator<T> | AsyncIterableIterator<T> {
+    public take(count: number): Iter<T> {
         return this.mode === 'sync'
             ? take(this.iter, count)
             : take(this.asyncIter, count);

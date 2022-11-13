@@ -1,4 +1,4 @@
-import Iter from "./Iter/Iter/Iter";
+import Iter from "./Iter/Iter/iter";
 
 Array.prototype[Symbol.asyncIterator] = () => {
     let i = 0;
@@ -17,6 +17,10 @@ Array.prototype[Symbol.asyncIterator] = () => {
     }
 };
 
-const iter = new Iter([1, 2], 'async');
+const iter = new Iter([1, 2]);
 
-iter.collect(new Set()).then(console.log);
+(async () => {
+    for await (const el of iter.flatMap(el => el)) {
+        console.log(el)
+    }
+})()

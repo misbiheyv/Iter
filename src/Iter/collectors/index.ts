@@ -35,7 +35,7 @@ export async function collect<T>(
     collection: Collection<T> | Array<T>,
 ): Promise<Collection<T> | Array<T>> {
     if (collection instanceof Array) {
-        return toArray(iter);
+        return toArray(iter).then(res => [...collection, ...res]);
     }
 
     const res: ExtendableCollection<T> = { collection, addToCollection };
