@@ -18,7 +18,7 @@ import {
 import {
 
     take,
-    fromRange,
+    inRange,
     mapSync,
     mapAsync,
     filterSync,
@@ -127,8 +127,8 @@ export default class Iter<T> {
         return take(this.iter ?? this.asyncIter, count)
     }
 
-    public fromRange(start: number, end?: number): Iter<T> {
-        return fromRange(this.iter ?? this.asyncIter, start, end);
+    public inRange(start: number, end?: number): Iter<T> {
+        return inRange(this.iter ?? this.asyncIter, start, end);
     }
 
     public toArray(): Promise<Array<T>> {

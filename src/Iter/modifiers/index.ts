@@ -264,7 +264,7 @@ export function enumerate<T>(iter: IterableIterator<T> | AsyncIterableIterator<T
 }
 
 
-export function fromRange<T>(
+export function inRange<T>(
     iter: IterableIterator<T> | AsyncIterableIterator<T>,
     start: number,
     end?: number

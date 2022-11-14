@@ -159,14 +159,14 @@ describe('Modifiers for iterators', () => {
         expect(res).toEqual([[0, 10], [1, 20], [2, 30]])
     })
 
-    test('async and async fromRange', async () => {
+    test('async and async inRange', async () => {
 
-        expect([...modifiers.fromRange([1,2,3,4,5,6].values(), 1, 3)])
+        expect([...modifiers.inRange([1,2,3,4,5,6].values(), 1, 3)])
             .toEqual([2, 3, 4]);
 
         const
             res = [],
-            it = modifiers.fromRange(asyncIter, 1, 3);
+            it = modifiers.inRange(asyncIter, 1, 3);
 
         for await (const el of it) {
             res.push(el)

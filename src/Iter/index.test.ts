@@ -181,13 +181,13 @@ describe('Iter', () => {
         expect(res).toEqual([1, 2, 3])
     })
 
-    test('fromRange method', async () => {
-        expect([...(new Iter([1, 2, 3, 4, 5]).fromRange(1, 3))])
+    test('inRange method', async () => {
+        expect([...(new Iter([1, 2, 3, 4, 5]).inRange(1, 3))])
             .toEqual([2, 3, 4]);
 
         const
             res = [],
-            it = new Iter(createAsyncIter(5)).fromRange(2);
+            it = new Iter(createAsyncIter(5)).inRange(2);
 
         for await (const el of it) {
             res.push(el)
