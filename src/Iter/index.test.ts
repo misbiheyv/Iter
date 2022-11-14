@@ -1,4 +1,4 @@
-import Iter from "./iter";
+import Iter from ".";
 
 const createAsyncIter = (count = 3) => {
     let i = 0;
@@ -179,6 +179,31 @@ describe('Iter', () => {
         }
 
         expect(res).toEqual([1, 2, 3])
+    })
+
+    test('fromRange method', async () => {
+        expect([...(new Iter([1, 2, 3, 4, 5]).fromRange(1, 3))])
+            .toEqual([2, 3, 4]);
+
+        const
+            res = [],
+            it = new Iter(createAsyncIter(5)).fromRange(2);
+
+        for await (const el of it) {
+            res.push(el)
+        }
+
+        expect(res).toEqual([3, 4, 5])
+    })
+
+    test('forEach method', async () => {
+        const resSync = [];
+        new Iter([1,2,3]).forEach(el => resSync.push(el + 1));
+        expect(resSync).toEqual([2,3,4]);
+
+        const resAsync = [];
+        await new Iter<number>(createAsyncIter(3)).forEach(el => resAsync.push(el + 1));
+        expect(resAsync).toEqual([2,3,4]);
     })
 
 });

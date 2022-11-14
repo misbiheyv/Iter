@@ -1,4 +1,4 @@
-import Iter from '../Iter/iter';
+import Iter from '..';
 
 import {
 
@@ -267,14 +267,14 @@ export function enumerate<T>(iter: IterableIterator<T> | AsyncIterableIterator<T
 export function fromRange<T>(
     iter: IterableIterator<T> | AsyncIterableIterator<T>,
     start: number,
-    end: number
+    end?: number
 ): Iter<T> {
     if (isSyncIterable(iter)) {
         let i = 0;
         const gen = function* () {
             for (const el of iter) {
                 if (i++ < start) continue;
-                if (i > end + 1) return;
+                if (end != null && i > end + 1) return;
                 yield el;
             }
         }
@@ -286,7 +286,7 @@ export function fromRange<T>(
         const gen = async function* () {
             for await (const el of iter) {
                 if (i++ < start) continue;
-                if (i > end + 1) return;
+                if (end != null && i > end + 1) return;
                 yield el;
             }
         }
@@ -298,9 +298,9 @@ export function fromRange<T>(
 }
 
 
-export function forEach<T>(
+export function forEachSync<T>(
     iter: IterableIterator<T>,
-    cb: (el: T, index?: number, iter?: unknown) => void
+    cb: (el: unknown, index?: number, iter?: unknown) => void
 ): void {
     let i = 0;
 
@@ -314,9 +314,9 @@ export function forEach<T>(
     }
 }
 
-export async function asyncForEach<T>(
+export async function forEachAsync<T>(
     iter: AsyncIterableIterator<T>,
-    cb: (el: T, index?: number, iter?: unknown) => void
+    cb: (el: unknown, index: number, iter: unknown) => void
 ): Promise<void> {
     let i = 0;
 
@@ -337,3 +337,59 @@ export async function asyncForEach<T>(
 //! ================= BE CAREFUL! DANGEROUS ZONE! FUNCTIONS BELOW AREN'T TESTED YET ================= !//
 
 
+export function chunkedForEach<T, I extends IterableIterator<T> | AsyncIterableIterator<T>>(
+    iter: I,
+    cb: (el: T, index: number, iter: I extends IterableIterator<T> ? IterableIterator<T> : AsyncIterableIterator<T>) => void
+) {
+    return executor(_forEach(iter, cb), undefined);
+}
+
+
+
+
+
+
+async function *_forEach<T>(
+    iter: AsyncIterableIterator<T> | IterableIterator<T>,
+    cb: (el: T, index?: number, iter?: unknown) => void
+): AsyncGenerator {
+    let time = Date.now();
+    let i = 0;
+    for await (const el of iter) {
+        cb(el, i++, iter);
+
+        if (Date.now() - time > 100) {
+            yield;
+            time = Date.now();
+        }
+    }
+}
+
+async function executor(iter: Generator | AsyncGenerator, value) {
+    await sleep(100);
+
+    let
+        res         = await iter.next(value),
+        promisified = Promise.resolve(res);
+
+    if (res.done) return promisified;
+
+    return promisified
+        .then((res) => {
+            return executor(iter, res.value);
+        })
+
+        .catch(async (err) => {
+            if (typeof iter.throw === 'function') {
+                res = await iter.throw(err)
+            }
+
+            if (res.done) return res.value;
+
+            return executor(iter, res.value);
+        })
+}
+
+function sleep(ms) {
+    return new Promise(res => setTimeout(res, ms));
+}

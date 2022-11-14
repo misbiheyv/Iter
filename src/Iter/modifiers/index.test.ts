@@ -177,16 +177,25 @@ describe('Modifiers for iterators', () => {
 
     test('async and async forEach', async () => {
         let res = [];
-        modifiers.forEach([1,2,3].values(), async (el) => {
+        modifiers.forEachSync([1,2,3].values(), async (el: number) => {
             res.push(el + 1)
         });
         expect(res).toEqual([2, 3, 4])
 
         res = [];
-        await modifiers.asyncForEach(asyncIter, (el) => {
+        await modifiers.forEachAsync(asyncIter, (el: number) => {
             res.push(el + 1)
         });
 
         expect(res).toEqual([11,21,31])
     })
+
+    test('chunkedForEach', async () => {
+        let res = [];
+        await modifiers.chunkedForEach([1,2,3].values(), (el: number) => {
+            res.push(el + 1)
+        });
+        expect(res).toEqual([2, 3, 4])
+    })
+
 })

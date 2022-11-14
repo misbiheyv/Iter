@@ -1,5 +1,6 @@
-import Iter from "./Iter/Iter/iter";
-import { forEach, asyncForEach } from "./Iter/modifiers";
+import Iter from "./Iter";
+import { chunkedForEach } from "./Iter/modifiers";
+import * as modifiers from "./Iter/modifiers";
 const createAsyncIter = (count = 3) => {
     let i = 0;
 
@@ -17,12 +18,17 @@ const createAsyncIter = (count = 3) => {
     }
 };
 
-const sres = [];
-forEach([1,2,3].values(), el => sres.push(el));
-console.log(sres)
+// const sres = [];
+//
+// chunkedForEach(createAsyncIter(1e5), (_, i, iter) => console.log(i, iter))
+//     .then(res => console.log('END', res));
 
-const ares = [];
-asyncForEach(createAsyncIter(3), el => ares.push(el)).then(() => console.log(ares));
+let res = [];
 
-// (async () => {
-// // })()
+chunkedForEach(new Array(1e6).values(), (el: number) => {
+    res.push(el + 1)
+});
+
+setTimeout(() => console.log(res.length), 1000)
+
+// new Iter<number>([1,2,3]).map(el => el + 2).filter(el => el % 3 === 1).take(2)
