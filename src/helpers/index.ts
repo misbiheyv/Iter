@@ -1,4 +1,4 @@
-import type { Collection, ExtendableCollection } from "../Iter/interface";
+import type { ExtendableCollection } from "../Iter/interface";
 
 export function intoAsyncIterator<T>(iterable: AsyncIterable<T>): AsyncIterableIterator<T> {
     const iter = iterable[Symbol.asyncIterator]();

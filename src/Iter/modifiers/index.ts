@@ -128,9 +128,8 @@ export function flattenAsync<R>(
     async function *flatten(arr: AsyncIterable<any> | Iterable<any>, depth) {
         if (isAsyncIterable(arr)) {
             for await (const el of arr) {
-                if ((isSyncIterable(el) || isAsyncIterable(el)) && typeof el !== 'string' && depth > 0) {
+                if ((isSyncIterable(el) || isAsyncIterable(el)) && typeof el !== 'string' && depth > 0) 
                     yield* flatten(el, depth - 1)
-                }
                 else
                     yield el
             }
@@ -237,3 +236,104 @@ export function take<T>(
         })
     }
 }
+
+
+export function enumerate<T>(iter: IterableIterator<T> | AsyncIterableIterator<T>): Iter<[number, T]> {
+    let i = 0;
+
+    if (isSyncIterable(iter)) {
+        const gen = function* () {
+            for (const el of iter) {
+                yield <[number, T]>[i++, el];
+            }
+        }
+        return new Iter(gen());
+    }
+
+    if (isAsyncIterable(iter)) {
+        const gen = async function* () {
+            for await (const el of iter) {
+                yield <[number, T]>[i++, el];
+            }
+        }
+
+        return new Iter(gen());
+    }
+
+    throw new Error('Passed argument is not iterable.')
+}
+
+
+export function fromRange<T>(
+    iter: IterableIterator<T> | AsyncIterableIterator<T>,
+    start: number,
+    end: number
+): Iter<T> {
+    if (isSyncIterable(iter)) {
+        let i = 0;
+        const gen = function* () {
+            for (const el of iter) {
+                if (i++ < start) continue;
+                if (i > end + 1) return;
+                yield el;
+            }
+        }
+        return new Iter(gen())
+    }
+
+    if (isAsyncIterable(iter)) {
+        let i = 0;
+        const gen = async function* () {
+            for await (const el of iter) {
+                if (i++ < start) continue;
+                if (i > end + 1) return;
+                yield el;
+            }
+        }
+
+        return new Iter(gen());
+    }
+
+    throw new Error('Passed argument is not iterable.');
+}
+
+
+export function forEach<T>(
+    iter: IterableIterator<T>,
+    cb: (el: T, index?: number, iter?: unknown) => void
+): void {
+    let i = 0;
+
+    const gen = function* () {
+        for (const el of iter) {
+            yield el;
+        }
+    }
+    for (const el of gen()) {
+        cb(el, i++, iter)
+    }
+}
+
+export async function asyncForEach<T>(
+    iter: AsyncIterableIterator<T>,
+    cb: (el: T, index?: number, iter?: unknown) => void
+): Promise<void> {
+    let i = 0;
+
+    const gen = async function* () {
+        for await (const el of iter) {
+            yield el;
+        }
+    };
+
+    for await (const el of gen()) {
+        cb(el, i++, iter);
+    }
+
+    return Promise.resolve();
+}
+
+
+//! ================= BE CAREFUL! DANGEROUS ZONE! FUNCTIONS BELOW AREN'T TESTED YET ================= !//
+
+

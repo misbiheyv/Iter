@@ -65,7 +65,6 @@ describe('Modifiers for iterators', () => {
         })();
     });
 
-
     test('sync and async map', async () => {
 
         expect([...modifiers.mapSync(iter, el => el ** 2)])
@@ -143,5 +142,51 @@ describe('Modifiers for iterators', () => {
         }
 
         expect(res).toEqual([10, 20])
+    })
+
+    test('async and async enumerate', async () => {
+        expect([...modifiers.enumerate(['a', 'b', 'c'][Symbol.iterator]())])
+            .toEqual([[0, 'a'], [1, 'b'], [2, 'c']]);
+
+        const
+            res = [],
+            it = modifiers.enumerate(asyncIter);
+
+        for await (const el of it) {
+            res.push(el)
+        }
+
+        expect(res).toEqual([[0, 10], [1, 20], [2, 30]])
+    })
+
+    test('async and async fromRange', async () => {
+
+        expect([...modifiers.fromRange([1,2,3,4,5,6].values(), 1, 3)])
+            .toEqual([2, 3, 4]);
+
+        const
+            res = [],
+            it = modifiers.fromRange(asyncIter, 1, 3);
+
+        for await (const el of it) {
+            res.push(el)
+        }
+
+        expect(res).toEqual([20, 30])
+    })
+
+    test('async and async forEach', async () => {
+        let res = [];
+        modifiers.forEach([1,2,3].values(), async (el) => {
+            res.push(el + 1)
+        });
+        expect(res).toEqual([2, 3, 4])
+
+        res = [];
+        await modifiers.asyncForEach(asyncIter, (el) => {
+            res.push(el + 1)
+        });
+
+        expect(res).toEqual([11,21,31])
     })
 })
