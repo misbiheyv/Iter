@@ -12,7 +12,7 @@ export function random(min: number, max: number): IterableIterator<number> {
     }
 }
 
-export function* seqSync(...iters: IterableIterator<unknown>[]): IterableIterator<unknown> {
+export function* chainSync(...iters: IterableIterator<unknown>[]): IterableIterator<unknown> {
     for (const iter of iters) {
         for (const el of iter) {
             yield el;
@@ -20,7 +20,7 @@ export function* seqSync(...iters: IterableIterator<unknown>[]): IterableIterato
     }
 }
 
-export async function* seqAsync(...iters: AsyncIterableIterator<unknown>[]): AsyncIterableIterator<unknown> {
+export async function* chainAsync(...iters: AsyncIterableIterator<unknown>[]): AsyncIterableIterator<unknown> {
     for (const iter of iters) {
         for await (const el of iter) {
             yield el;

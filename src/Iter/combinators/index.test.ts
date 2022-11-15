@@ -18,13 +18,13 @@ const createAsyncIter = (count = 3) => {
 };
 
 describe('Combinators for iterators', () => {
-    test('seq', async () => {
-        expect([...combinators.seqSync([1,2].values(), [3, 4].values(), [5,6].values())])
+    test('chain', async () => {
+        expect([...combinators.chainSync([1,2].values(), [3, 4].values(), [5,6].values())])
             .toEqual([1,2,3,4,5,6]);
 
         const
             res = [],
-            iter = combinators.seqAsync(createAsyncIter(2), createAsyncIter(2));
+            iter = combinators.chainAsync(createAsyncIter(2), createAsyncIter(2));
 
         for await (const el of iter) {
             res.push(el)
