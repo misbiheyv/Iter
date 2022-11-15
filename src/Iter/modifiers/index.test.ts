@@ -198,4 +198,19 @@ describe('Modifiers for iterators', () => {
         expect(res).toEqual([2, 3, 4])
     })
 
+    test('cycle', async () => {
+        expect([...modifiers.take(modifiers.cycleSync([1,2,3].values()), 6)])
+            .toEqual([1, 2, 3, 1, 2, 3]);
+
+        let
+            res = [],
+            it = modifiers.take(modifiers.cycleAsync(asyncIter), 6);
+
+        for await (const el of it) {
+            res.push(el)
+        }
+
+        expect(res).toEqual([10, 20, 30, 10, 20, 30]);
+    })
+
 })

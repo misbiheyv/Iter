@@ -334,8 +334,35 @@ export async function forEachAsync<T>(
 }
 
 
-//! ================= BE CAREFUL! DANGEROUS ZONE! FUNCTIONS BELOW AREN'T TESTED YET ================= !//
+export function *cycleSync<T>(iter: IterableIterator<T>) {
+    let
+        cache = [],
+        i = 0;
 
+    while (true) {
+        for (const el of iter) {
+            cache.push(el);
+            yield el;
+        }
+
+        yield cache[i++ % cache.length];
+    }
+}
+
+export async function *cycleAsync<T>(iter: AsyncIterableIterator<T>) {
+    let
+        cache = [],
+        i = 0;
+
+    while (true) {
+        for await (const el of iter) {
+            cache.push(el);
+            yield el;
+        }
+
+        yield cache[i++ % cache.length];
+    }
+}
 
 export function chunkedForEach<T, I extends IterableIterator<T> | AsyncIterableIterator<T>>(
     iter: I,
@@ -343,11 +370,6 @@ export function chunkedForEach<T, I extends IterableIterator<T> | AsyncIterableI
 ) {
     return executor(_forEach(iter, cb), undefined);
 }
-
-
-
-
-
 
 async function *_forEach<T>(
     iter: AsyncIterableIterator<T> | IterableIterator<T>,
@@ -393,3 +415,6 @@ async function executor(iter: Generator | AsyncGenerator, value) {
 function sleep(ms) {
     return new Promise(res => setTimeout(res, ms));
 }
+
+
+//! ================= BE CAREFUL! DANGEROUS ZONE! FUNCTIONS BELOW AREN'T TESTED YET ================= !//
