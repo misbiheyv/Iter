@@ -1,3 +1,6 @@
+type Reversible = { reverse: () => IterableIterator<any> }
+const isReversible = (o: any): o is Reversible => !(o instanceof Array) && typeof o.reverse === 'function'
+
 import type {
 
     Optional,
@@ -59,11 +62,27 @@ export default class Iter<T> {
 
     protected iter: Optional<IterableIterator<T>>;
 
+    protected reverseIter: Optional<IterableIterator<T> | AsyncIterableIterator<T>>
+
     public get isSync(): boolean {
         return this.mode === 'sync';
     }
 
     constructor(iterable: Iterable<T> | AsyncIterable<T>, mode?: Modes) {
+        if (isReversible(iterable)) {
+            this.reverseIter = iterable.reverse();
+        }
+
+        if (iterable instanceof Array) {
+            const gen = function* () {
+                for (let i = iterable.length - 1; i >= 0; i--) {
+                    yield iterable[i]
+                }
+            }
+
+            this.reverseIter = gen()
+        }
+
         if (isAsyncIterable(iterable)) {
             this.mode = mode ?? 'async';
             this.asyncIter = intoAsyncIterator(iterable);
@@ -179,4 +198,32 @@ export default class Iter<T> {
         return intoAsyncIterator(this.asyncIter);
     }
 
+    *reverse(): IterableIterator<T> {
+        if (this.reverseIter == null)
+            throw  new Error('Reverse iterator is not defined.');
+
+        if (!this.isSync)
+            throw  new Error('Sync iterator is not defined.');
+
+        if (isSyncIterable(this.reverseIter)) {
+            for (const el of this.reverseIter) {
+                yield el
+            }
+        }
+
+        return [].values();
+    }
+
+
+    async *asyncReverse(): AsyncIterableIterator<T> {
+        if (this.reverseIter == null)
+            throw  new Error('Reverse iterator is not defined.');
+
+        if (this.isSync)
+            throw  new Error('Async iterator is not defined.');
+
+        for await (const el of this.reverseIter) {
+            yield el
+        }
+    }
 }

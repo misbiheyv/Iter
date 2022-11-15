@@ -206,4 +206,50 @@ describe('Iter', () => {
         expect(resAsync).toEqual([2,3,4]);
     })
 
+    const obj = {
+        async *asyncReverse(): AsyncIterableIterator<unknown> {
+            for await (const el of [1,2,3]) {
+                yield el
+            }
+        },
+        reverse(): IterableIterator<unknown> {
+            let i = 3;
+            return {
+                [Symbol.iterator]() {
+                    return this
+                },
+                next() {
+                    return {
+                        done: i-- === 0,
+                        value: [1, 2, 3][i]
+                    }
+                }
+            }
+        },
+        [Symbol.iterator]() {
+            let i = 0;
+            return {
+                [Symbol.iterator]() {
+                    return this
+                },
+                next() {
+                    return {
+                        done: i >= [1,2,3].length,
+                        value: [1,2,3][i++]
+                    }
+                }
+            }
+        }
+    }
+
+
+    test('reverse', async () => {
+        expect([...new Iter(obj).reverse()]).toEqual([3, 2, 1])
+
+        const res = [];
+        for await (const el of new Iter(obj.asyncReverse()).asyncReverse()) {
+            res.push(el)
+        }
+        expect(res).toEqual([3, 2, 1])
+    })
 });
