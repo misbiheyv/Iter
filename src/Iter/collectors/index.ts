@@ -5,51 +5,35 @@ import type {
 
 } from '../interface';
 
-import { 
+import { addToCollection } from "../../helpers";
 
-    isAsyncIterable, 
-    isSyncIterable, 
-    addToCollection
-
-} from "../../helpers";
-
-export async function toArray<T>(iter: IterableIterator<T> | AsyncIterableIterator<T>): Promise<T[]> {
+export async function toArray<T>(iter: Iterable<T> | AsyncIterable<T>): Promise<T[]> {
     const res: T[] = []
 
-    if (isAsyncIterable(iter)) {
-            for await (const el of iter) {
-                res.push(el)
-            }
-
-    } else {
-        for (const el of iter) {
-            res.push(el)
-        }
+    for await (const el of iter) {
+        res.push(el)
     }
-    
+
     return res;
 }
 
-export async function collect<T>(
-    iter: IterableIterator<T> | AsyncIterableIterator<T>,
-    collection: Collection<T> | Array<T>,
-): Promise<Collection<T> | Array<T>> {
+
+export async function collect<T>(iter: Iterable<T> | AsyncIterable<T>, collection: Array<T>)
+    : Promise<Array<T>>;
+export async function collect<T>(iter: Iterable<T> | AsyncIterable<T>, collection: Collection<T>)
+    : Promise<Collection<T>>;
+
+export async function collect<T>(iter: Iterable<T> | AsyncIterable<T>, collection: Collection<T> | Array<T>,)
+    : Promise<Collection<T> | Array<T>> {
+
     if (collection instanceof Array) {
         return toArray(iter).then(res => [...collection, ...res]);
     }
 
     const res: ExtendableCollection<T> = { collection, addToCollection };
 
-    if (isAsyncIterable(iter)) {
-        for await (const el of iter) {
-            res.addToCollection(el)
-        }
-    } else if (isSyncIterable) {
-        for (const el of iter) {
-            res.addToCollection(el)
-        }
-    } else {
-        throw new Error('Passed argument is not iterable.')
+    for await (const el of iter) {
+        res.addToCollection(el)
     }
 
     return res.collection;

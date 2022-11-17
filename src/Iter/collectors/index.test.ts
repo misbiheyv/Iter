@@ -25,7 +25,7 @@ describe('Collectors for iterators', () => {
         })();
     })
 
-    it('should return new Array with collected iter values', async () => {
+    test('toArray. Should return new Array with collected iter values', async () => {
         const array = await collectors.toArray(iter)
         expect(array).toEqual([1, 2, 3])
 
@@ -33,7 +33,7 @@ describe('Collectors for iterators', () => {
         expect(array1).toEqual([10, 20, 30])
     });
 
-    it('should collect iterator into passed Collection (returns new Collection)', async () => {
+    test('collect. Should collect iterator into passed Collection (returns new Collection)', async () => {
         const set = await collectors.collect(iter, new Set([11, 22]));
         expect(set).toEqual(new Set([11, 22, 1, 2, 3]));
 
@@ -41,7 +41,7 @@ describe('Collectors for iterators', () => {
         expect(set1).toEqual(new Set([11, 22, 10, 20, 30]));
     });
 
-    it('should collect iterator into passed Array (returns new Array)', async () => {
+    test('collect. Should collect iterator into passed Array (returns new Array)', async () => {
 
         const arr = await collectors.collect(iter, [11, 22]);
         expect(arr).toEqual([11, 22, 1, 2, 3]);
