@@ -18,6 +18,7 @@ import {
     isReversible,
 
 } from '../helpers';
+import {forEach, take} from "./modifiers";
 
 
 export default class Iter<T> {
@@ -25,6 +26,20 @@ export default class Iter<T> {
     protected collection: Iterable<T> | AsyncIterable<T>;
 
     protected iter: IterableIterator<T> | AsyncIterableIterator<T>;
+
+    public static random(min: number, max: number): IterableIterator<number>  {
+        return modifiers.random(min, max);
+    }
+
+    //TODO ВЫВЕСТИ ТИПЫ
+    public static seq(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
+        return new Iter(combinators.chain(...iterables));
+    }
+
+    //TODO ВЫВЕСТИ ТИПЫ
+    public static zip(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
+        return new Iter(combinators.zip(...iterables));
+    }
 
     constructor(iterable:  Iterable<T> | AsyncIterable<T>) {
         this.collection = iterable;
@@ -41,6 +56,8 @@ export default class Iter<T> {
 
         throw new Error('Passed argument is not iterable.')
     }
+
+    //#region Modifiers
 
     public map<R>(
         cb: (el: T, index?: number, collection?: typeof this.collection) => R
@@ -92,7 +109,28 @@ export default class Iter<T> {
         return new Iter(modifiers.enumerate(this.collection));
     }
 
+    //#endregion
 
+    //#region Combinators
+
+    //TODO ВЫВЕСТИ ТИПЫ
+    chain(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
+        return new Iter(combinators.chain(this.collection, ...iterables));
+    }
+
+    //TODO ВЫВЕСТИ ТИПЫ
+    zip(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
+        return new Iter(combinators.zip(this.collection, ...iterables));
+    }
+
+    //TODO ВЫВЕСТИ ТИПЫ
+    mapSeq(handlers: ((el: any) => any)[]): Iter<unknown> {
+        return new Iter(combinators.mapSeq(this.collection, handlers));
+    }
+
+    //#endregion
+
+    //#region Collectors
 
     public toArray(): Promise<Array<T>> {
         return collectors.toArray(this.collection);
@@ -104,6 +142,10 @@ export default class Iter<T> {
     public collect(collection: Collection<T> | Array<T>): Promise<Array<T> | Collection<T>> {
         return collectors.collect(this.collection, collection);
     }
+
+    //#endregion
+
+    //#region Aggregators
 
     public sum(fn?: (el: T) => number): Promise<number> {
         return aggregators.sum(this.collection, fn);
@@ -122,6 +164,9 @@ export default class Iter<T> {
         return aggregators.min(this.collection, fn);
     }
 
+    //#endregion
+
+    //#region Iterators
 
     [Symbol.iterator](): IterableIterator<T> {
         if (isSyncIterable(this.iter)) {
@@ -161,5 +206,7 @@ export default class Iter<T> {
 
         throw new Error('Iter is irreversible.')
     }
+
+    //#endregion
 
 }

@@ -1,5 +1,7 @@
 import Iter from "./index";
 import { sleep } from "../helpers";
+import {forEach} from "./modifiers";
+import * as combinators from "./combinators";
 
 const createReversible = () => ({
     *[Symbol.iterator]() {
@@ -201,4 +203,45 @@ describe('Iter', () => {
             expect(res).toEqual([1,2,3,4,5]);
         });
     });
+
+    describe('methods combinators', () => {
+        test('chain', async () => {
+            const res = [];
+            await new Iter([1,2,3]).chain(new Set([4,5,6])).forEach(el => res.push(el))
+            expect(res).toEqual([1,2,3,4,5,6]);
+        })
+
+        test('zip', async () => {
+            const res = [];
+            await new Iter([1,2,3]).zip(new Set(['a','b'])).forEach(el => res.push(el))
+            expect(res).toEqual([[1, 'a'], [2, 'b']]);
+        })
+
+        test('mapSeq', async () => {
+            const res = [];
+            await new Iter([1,2,3]).mapSeq([el => el ** 2, el => el + 1]).forEach(el => res.push(el));
+            expect(res).toEqual([2,5,10]);
+        })
+    });
+
+    describe('static methods', () => {
+        test('seq', async () => {
+            const res = [];
+            await Iter.seq([1,2,3], new Set([4,5,6])).forEach(el => res.push(el))
+            expect(res).toEqual([1,2,3,4,5,6]);
+        });
+
+        test('zip', async () => {
+            const res = [];
+            await Iter.zip([1, 2], new Set(['a','b'])).forEach(el => res.push(el))
+            expect(res).toEqual([[1, 'a'], [2, 'b']]);
+        });
+
+        test('random', async () => {
+            await new Iter(Iter.random(-3, 3)).take(10).forEach(el => {
+                expect(el).toBeGreaterThanOrEqual(-3);
+                expect(el).toBeLessThanOrEqual(3);
+            })
+        })
+    })
 })

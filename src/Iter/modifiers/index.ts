@@ -121,6 +121,20 @@ export async function* cycle<T>(iterable: AsyncIterable<T> | Iterable<T>): Async
     }
 }
 
+export function random(min: number, max: number): IterableIterator<number> {
+    return {
+        [Symbol.iterator]() {
+            return this;
+        },
+        next() {
+            return {
+                done: false,
+                value: (min + Math.floor(Math.random() * (max - min)))
+            }
+        }
+    }
+}
+
 export async function chunkedForEach<T, I extends Iterable<T> | AsyncIterable<T>>(
     iter: I,
     cb: (el: T, index: number, iter: I extends Iterable<T> ? Iterable<T> : AsyncIterable<T>) => void

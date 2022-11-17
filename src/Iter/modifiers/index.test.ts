@@ -1,5 +1,7 @@
 import * as modifiers from './index';
 import { sleep } from '../../helpers';
+import {forEach, take} from "./index";
+import * as combinators from "../combinators";
 
 describe('Modifiers for iterables', () => {
 
@@ -85,5 +87,12 @@ describe('Modifiers for iterables', () => {
         await sleep(100);
         expect(i).toBeGreaterThan(0);
     });
+
+    test('random. Should return random value in range.', () => {
+        forEach(
+            take(modifiers.random(-3, 3), 10),
+            el => expect(el).toBeGreaterThanOrEqual(-3)
+        );
+    })
 
 });

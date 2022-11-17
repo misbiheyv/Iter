@@ -29,10 +29,4 @@ describe('Combinators for iterators', () => {
         expect(res).toEqual([3,6,11]);
     });
 
-    test('random. Should return random value in range.', () => {
-        forEach(
-            take(combinators.random(-3, 3), 10),
-            el => expect(el).toBeGreaterThanOrEqual(-3)
-        );
-    })
 })

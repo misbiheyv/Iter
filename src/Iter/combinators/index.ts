@@ -1,20 +1,6 @@
-export function random(min: number, max: number): IterableIterator<number> {
-    return {
-        [Symbol.iterator]() {
-            return this;
-        },
-        next() {
-            return {
-                done: false,
-                value: (min + Math.floor(Math.random() * (max - min)))
-            }
-        }
-    }
-}
-
-export async function* chain(...iters: (Iterable<unknown> | AsyncIterable<unknown>)[])
+export async function* chain(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[])
     : AsyncIterableIterator<unknown> {
-    for (const iter of iters) {
+    for (const iter of iterables) {
         for await (const el of iter) {
             yield el;
         }
