@@ -1,255 +1,204 @@
-import Iter from ".";
+import Iter from "./index";
+import { sleep } from "../helpers";
 
-const createAsyncIter = (count = 3) => {
-    let i = 0;
-
-    return {
-        [Symbol.asyncIterator]() {
-            return this;
-        },
-        next: () => {
-            return new Promise(res => setTimeout(() => res(++i), 50))
-                .then(res => ({
-                    done: i > count,
-                    value: i
-                }))
+const createReversible = () => ({
+    *[Symbol.iterator]() {
+        let i = 0;
+        while (i++ > 3) {
+            yield i;
+        }
+    },
+    *reverse() {
+        let i = 4;
+        while (--i > 0) {
+            yield i;
         }
     }
-};
-
-const createDeepAsyncIter = () => {
-    let i = 0;
-
-    return {
-        [Symbol.asyncIterator]() {
-            return this;
-        },
-        next: () => {
-            return new Promise(res => setTimeout(() => res(++i), 50))
-                .then(res => ({
-                    done: i > 3,
-                    value: [[i]]
-                }))
-        }
-    }
-};
+})
 
 describe('Iter', () => {
+    describe('methods iterators', () => {
 
-    test('sync iterators', () => {
-        expect([...new Iter([1, 2, 3])]).toEqual([1, 2, 3]);
+        test('values', async () => {
+            const
+                res = [],
+                iter = await new Iter([1,2,3]).values();
 
-        expect([...new Iter([1, 2, 3]).values()]).toEqual([1, 2, 3]);
-    })
-
-    test('async iterators', async () => {
-        let
-            res = [],
-            it = new Iter(createAsyncIter());
-
-        for await (const el of it) {
-            res.push(el)
-        }
-        expect(res).toEqual([1, 2, 3])
-
-        for await (const el of it.asyncValues()) {
-            res.push(el)
-        }
-        expect(res).toEqual([1, 2, 3])
-    })
-
-    test('aggregators', async () => {
-        expect(await new Iter([1, 2, 3]).avg()).toBe(2);
-
-        expect(await new Iter([1, 2, 3]).sum()).toBe(6);
-
-        expect(await new Iter([1, 2, 3]).min()).toBe(1);
-
-        expect(await new Iter([1, 2, 3]).max()).toBe(3);
-
-
-        expect(await new Iter(createAsyncIter()).avg()).toBe(2);
-
-        expect(await new Iter(createAsyncIter()).sum()).toBe(6);
-
-        expect(await new Iter(createAsyncIter()).min()).toBe(1);
-
-        expect(await new Iter(createAsyncIter()).max()).toBe(3);
-    })
-
-    test('collectors', async () => {
-        expect(await new Iter([1, 2, 3]).toArray())
-            .toEqual([1, 2, 3]);
-
-        expect(await new Iter(createAsyncIter()).toArray())
-            .toEqual([1, 2, 3]);
-
-        expect(await new Iter([1, 2, 3]).collect(new Set([0])))
-            .toEqual(new Set([0, 1, 2, 3]));
-
-        expect(await new Iter(createAsyncIter()).collect(new Set([0])))
-            .toEqual(new Set([0, 1, 2, 3]));
-    })
-
-    test('map modifier', async () => {
-        expect([...(new Iter<number>([1, 2, 3]).map(el => el ** 2))])
-            .toEqual([1, 4, 9]);
-
-        const
-            res = [],
-            it = new Iter<number>(createAsyncIter()).map(el => el ** 2);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([1, 4, 9]);
-    })
-
-    test('filter modifier', async () => {
-        expect([...(new Iter<number>([1, 2, 3, 4, 5]).filter(el => el % 2 === 0))])
-            .toEqual([2, 4]);
-
-        const
-            res = [],
-            it = new Iter<number>(createAsyncIter(5)).filter(el => el % 2 === 0);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([2, 4]);
-    })
-
-    test('flatten modifier', async () => {
-        expect([...(new Iter([1, [2, 3], [4, [5]]]).flatten(1))])
-            .toEqual([1, 2, 3, 4, [5]]);
-
-        expect([...(new Iter([1, [2, 3], [4, [5]]]).flatten(2))])
-            .toEqual([1, 2, 3, 4, 5]);
-
-
-        let
-            res = [],
-            it = new Iter<number>(createDeepAsyncIter()).flatten(1);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([[1], [2], [3]]);
-
-        res = []
-        it = new Iter<number>(createDeepAsyncIter()).flatten(2);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([1, 2, 3]);
-    })
-
-    test('flatMap modifier', async () => {
-        expect([...(new Iter([1, [2, 3], [4, [5]]]).flatMap((el: number) => el + 1))])
-            .toEqual([2, 3, 4, 5, 6]);
-
-
-        let
-            res = [],
-            it = new Iter<number>(createDeepAsyncIter()).flatMap((el: number) => el + 1);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([2, 3, 4]);
-
-    })
-
-    test('take method', async () => {
-        expect([...(new Iter([1, 2, 3, 4, 5]).take(3))])
-            .toEqual([1, 2, 3]);
-
-        const
-            res = [],
-            it = new Iter(createAsyncIter(5)).take(3);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([1, 2, 3])
-    })
-
-    test('inRange method', async () => {
-        expect([...(new Iter([1, 2, 3, 4, 5]).inRange(1, 3))])
-            .toEqual([2, 3, 4]);
-
-        const
-            res = [],
-            it = new Iter(createAsyncIter(5)).inRange(2);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([3, 4, 5])
-    })
-
-    test('forEach method', async () => {
-        const resSync = [];
-        new Iter([1,2,3]).forEach(el => resSync.push(el + 1));
-        expect(resSync).toEqual([2,3,4]);
-
-        const resAsync = [];
-        await new Iter<number>(createAsyncIter(3)).forEach(el => resAsync.push(el + 1));
-        expect(resAsync).toEqual([2,3,4]);
-    })
-
-    const obj = {
-        async *asyncReverse(): AsyncIterableIterator<unknown> {
-            for await (const el of [1,2,3]) {
-                yield el
+            for await (const el of iter) {
+                res.push(el)
             }
-        },
-        reverse(): IterableIterator<unknown> {
-            let i = 3;
-            return {
-                [Symbol.iterator]() {
-                    return this
-                },
-                next() {
-                    return {
-                        done: i-- === 0,
-                        value: [1, 2, 3][i]
-                    }
-                }
+
+            expect(res).toEqual([1,2,3]);
+        });
+
+        test('reverseValues', async () => {
+            const
+                res = [],
+                iter = await new Iter([1,2,3]).reverseValues();
+
+            for await (const el of iter) {
+                res.push(el)
             }
-        },
-        [Symbol.iterator]() {
-            let i = 0;
-            return {
-                [Symbol.iterator]() {
-                    return this
-                },
-                next() {
-                    return {
-                        done: i >= [1,2,3].length,
-                        value: [1,2,3][i++]
-                    }
-                }
-            }
-        }
-    }
+            expect(res).toEqual([3,2,1]);
+        });
 
+        test('[Symbol.iterator]', async () => {
+            const res = [...new Iter([1,2,3])]
+            expect(res).toEqual([1,2,3]);
+        });
 
-    test('reverse', async () => {
-        expect([...new Iter(obj).reverse()]).toEqual([3, 2, 1])
+        test('reverse array', async () => {
+            const res = [];
+            await new Iter([1,2,3]).reverse().forEach(el => res.push(el));
+            expect(res).toEqual([3,2,1]);
+        });
 
-        const res = [];
-        for await (const el of new Iter(obj.asyncReverse()).asyncReverse()) {
-            res.push(el)
-        }
-        expect(res).toEqual([3, 2, 1])
-    })
-});
+        test('reverse reversible collection', async () => {
+            const res = [];
+            await new Iter(createReversible()).reverse().forEach(el => res.push(el));
+            expect(res).toEqual([3,2,1]);
+        });
+
+        test('reverse irreversible', () => {
+            expect(() => new Iter(new Set([1,2,3])).reverse())
+                .toThrowError('Iter is irreversible.');
+        });
+
+        test('forEach', async () => {
+            const res = [];
+            await new Iter([1,2,3]).forEach(el => res.push(el + 1));
+            expect(res).toEqual([2,3,4]);
+        });
+
+        test('chunkedForEach', async () => {
+            const res = [];
+            await new Iter([1,2,3]).forEachChunked(el => res.push(el + 1));
+            expect(res).toEqual([2,3,4]);
+
+            let
+                i = 0;
+
+            new Iter(new Array(10e6)).forEachChunked((_, ind) => i = ind);
+            await sleep(500);
+            expect(i).toBeGreaterThan(0);
+        });
+
+    });
+
+    describe('methods modifiers', () => {
+
+        //foreach and chunkedForeach
+
+        test('map', async () => {
+            const res = [];
+            await new Iter([1,2,3]).map(el => el ** 2).forEach(el => res.push(el));
+            expect(res).toEqual([1, 4, 9]);
+        });
+
+        test('filter', async () => {
+            const res = [];
+            await new Iter([1,2,3,4,5]).filter(el => el % 2 === 0).forEach(el => res.push(el));
+            expect(res).toEqual([2, 4]);
+        });
+
+        test('flatten', async () => {
+            const res = [];
+            await new Iter([1,[2,[3]]]).flatten(1).forEach(el => res.push(el));
+            expect(res).toEqual([1, 2, [3]]);
+        });
+
+        test('flatMap', async () => {
+            const res = [];
+            await new Iter([1,[2,[3]]]).flatMap((el: number) => el ** 2).forEach(el => res.push(el));
+            expect(res).toEqual([1, 4, 9]);
+        });
+
+        test('take', async () => {
+            const res = [];
+            await new Iter([1,2,3,4,5]).take(3).forEach(el => res.push(el));
+            expect(res).toEqual([1, 2, 3]);
+        });
+
+        test('inRange', async () => {
+            let res = [];
+            await new Iter([1,2,3,4,5]).inRange(1, 3).forEach(el => res.push(el));
+            expect(res).toEqual([2, 3, 4]);
+
+            res = [];
+            await new Iter([1,2,3,4,5]).inRange(2).forEach(el => res.push(el));
+            expect(res).toEqual([3, 4, 5]);
+        });
+
+        test('cycle', async () => {
+            let res = [];
+            await new Iter([1,2,3]).cycle().take(8).forEach(el => res.push(el));
+            expect(res).toEqual([1,2,3,1,2,3,1,2]);
+        });
+
+        test('enumerate', async () => {
+            let res = [];
+            await new Iter(['a', 'b']).enumerate().forEach(el => res.push(el));
+            expect(res).toEqual([[0, 'a'], [1, 'b']]);
+        });
+
+    });
+
+    describe('methods aggregators', () => {
+
+        test('sum', async () => {
+            let res = await new Iter([1,2,3]).sum();
+            expect(res).toBe(6);
+
+            res = await new Iter([{amount: 1}, {amount: 2}, {amount: 3}]).sum(el => el.amount);
+            expect(res).toBe(6);
+        });
+
+        test('avg', async () => {
+            let res = await new Iter([1,2,3]).avg();
+            expect(res).toBe(2);
+
+            res = await new Iter([{amount: 1}, {amount: 2}, {amount: 3}]).avg(el => el.amount);
+            expect(res).toBe(2);
+        });
+
+        test('max', async () => {
+            let res = await new Iter([1,2,3]).max();
+            expect(res).toBe(3);
+
+            res = await new Iter([{amount: 1}, {amount: 2}, {amount: 3}]).max(el => el.amount);
+            expect(res).toBe(3);
+        });
+
+        test('min', async () => {
+            let res = await new Iter([1,2,3]).min();
+            expect(res).toBe(1);
+
+            res = await new Iter([{amount: 1}, {amount: 2}, {amount: 3}]).min(el => el.amount);
+            expect(res).toBe(1);
+        });
+
+    });
+
+    describe('methods collectors', () => {
+        test('toArray', async () => {
+            let res = await new Iter([1,2,3]).toArray();
+            expect(res).toEqual([1,2,3]);
+        });
+
+        test('collect into extendable collection', async () => {
+            let res = await new Iter([1,2,3]).collect(new Set());
+            expect(res).toEqual(new Set([1,2,3]));
+
+            res = await new Iter([3,4,5]).collect(new Set([1,2]));
+            expect(res).toEqual(new Set([1,2,3,4,5]));
+        });
+
+        test('collect into Array', async () => {
+            let res = await new Iter([1,2,3]).collect([]);
+            expect(res).toEqual([1,2,3]);
+
+            res = await new Iter([3,4,5]).collect([1,2]);
+            expect(res).toEqual([1,2,3,4,5]);
+        });
+    });
+})

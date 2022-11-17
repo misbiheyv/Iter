@@ -2,6 +2,7 @@ import * as modifiers from './index';
 import { sleep } from '../../helpers';
 
 describe('Modifiers for iterables', () => {
+
     test('forEach. Should iterates values with passed function executing.', async () => {
         const res = []
         await modifiers.forEach([1,2,3], (el) => res.push(el))
@@ -48,7 +49,6 @@ describe('Modifiers for iterables', () => {
         expect(res).toEqual([1, 2, 3, 1, 2, 3, 1])
     });
 
-
     test('enumerate. Should yields tuple of current index and element.', async () => {
         const res = []
         await modifiers.forEach(
@@ -85,4 +85,5 @@ describe('Modifiers for iterables', () => {
         await sleep(100);
         expect(i).toBeGreaterThan(0);
     });
-})
+
+});

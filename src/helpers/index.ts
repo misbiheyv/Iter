@@ -1,4 +1,21 @@
-import type { ExtendableCollection } from "../Iter/interface";
+import type { ExtendableCollection, Reversible } from "../Iter/interface";
+
+
+export const isAsyncIterable = (obj: unknown): obj is AsyncIterable<unknown> =>
+    typeof obj[Symbol.asyncIterator] === "function";
+
+
+export const isSyncIterable = (obj: unknown): obj is Iterable<unknown> =>
+    typeof obj[Symbol.iterator] === "function";
+
+
+export const isIterable = (obj: unknown): obj is AsyncIterable<any> | Iterable<any> =>
+    isAsyncIterable(obj) || isSyncIterable(obj);
+
+
+export const isReversible = (o: any): o is Reversible =>
+    o instanceof Array || typeof o.reverse === 'function';
+
 
 export function intoIterator<T>(iterable: Iterable<T>): IterableIterator<T>;
 export function intoIterator<T>(asyncIterable: AsyncIterable<T>): AsyncIterableIterator<T>;
@@ -32,17 +49,25 @@ export function intoIterator<T>(iterable: Iterable<T> | AsyncIterable<T>)
     }
 }
 
-export function isIterable(obj: unknown): obj is AsyncIterable<any> | Iterable<any> {
-    return isAsyncIterable(obj) || isSyncIterable(obj);
+
+export function createReverseIterator<T>(iterable: Iterable<T> | AsyncIterable<T>) {
+
+    if (iterable instanceof Array) {
+        const gen = async function* () {
+            for (let i = iterable.length - 1; i >= 0; i--) {
+                yield await iterable[i]
+            }
+        }
+
+        return gen()
+    }
+
+    if (isReversible(iterable)) {
+        return iterable.reverse();
+    }
 }
 
-export function isAsyncIterable(obj: unknown): obj is AsyncIterable<unknown> {
-    return typeof obj[Symbol.asyncIterator] === "function";
-}
 
-export function isSyncIterable(obj: unknown): obj is Iterable<unknown> {
-    return typeof obj[Symbol.iterator] === "function";
-}
 
 
 export function addToCollection<T>(this: ExtendableCollection<T>, el: T) {
