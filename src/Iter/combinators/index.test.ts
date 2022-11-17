@@ -1,80 +1,38 @@
 import * as combinators from './index';
-
-const createAsyncIter = (count = 3) => {
-    let i = 0;
-
-    return {
-        [Symbol.asyncIterator]() {
-            return this;
-        },
-        next: () => {
-            return new Promise(res => setTimeout(() => res(++i), 50))
-                .then(res => ({
-                    done: i > count,
-                    value: i
-                }))
-        }
-    }
-};
+import { forEach, take } from "../modifiers";
 
 describe('Combinators for iterators', () => {
-    test('chain', async () => {
-        expect([...combinators.chainSync([1,2].values(), [3, 4].values(), [5,6].values())])
-            .toEqual([1,2,3,4,5,6]);
-
-        const
-            res = [],
-            iter = combinators.chainAsync(createAsyncIter(2), createAsyncIter(2));
-
-        for await (const el of iter) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([1,2,1,2])
+    test('chain. Should links some iterators together.', async () => {
+        const res = [];
+        await forEach(
+            combinators.chain([1,2,3], new Set([4,5,6])),
+            el => res.push(el)
+        );
+        expect(res).toEqual([1,2,3,4,5,6]);
     });
 
+    test('zip. Should iterates some other iterators simultaneously.', async () => {
+        const res = [];
+        await forEach(
+            combinators.zip([1,2,3], new Set(['a','b'])),
+            el => res.push(el)
+        );
+        expect(res).toEqual([[1, 'a'], [2, 'b']]);
+    });
 
-    test('zip', async () => {
-        expect([...combinators.zipSync([1,2].values(), [3, 4].values(), [5,6].values())])
-            .toEqual([[1,3,5],[2,4,6]]);
+    test('mapSeq. Should executes all functions on every element.', async () => {
+        const res = [];
+        await forEach(
+            combinators.mapSeq([1,2,3], [el => el ** 2, el => el + 2]),
+            el => res.push(el)
+        );
+        expect(res).toEqual([3,6,11]);
+    });
 
-
-        const
-            res = [],
-            iter = combinators.zipAsync(createAsyncIter(2), createAsyncIter(2));
-
-        for await (const el of iter) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([[1,1],[2,2]])
-    })
-
-    test('mapSeq', async () => {
-        expect([
-            ...combinators.mapSeqSync([1,2,3].values(), [el => el ** 2, el => el + 1, el => `${el}`])
-            ])
-            .toEqual(['2', '5', '10']);
-
-        const
-            res = [],
-            iter = combinators.mapSeqAsync(createAsyncIter(2), [el => el ** 2, el => el + 1, el => `${el}`]);
-
-        for await (const el of iter) {
-            res.push(el)
-        }
-
-        expect(res).toEqual(['2', '5'])
-    })
-
-
-    test('random', () => {
-        let i = 0;
-
-        do {
-            let v = combinators.random(-3, 3).next().value;
-            expect(v).toBeGreaterThanOrEqual(-3);
-            expect(v).toBeLessThanOrEqual(3);
-        } while  (i++ < 10);
+    test('random. Should return random value in range.', () => {
+        forEach(
+            take(combinators.random(-3, 3), 10),
+            el => expect(el).toBeGreaterThanOrEqual(-3)
+        );
     })
 })

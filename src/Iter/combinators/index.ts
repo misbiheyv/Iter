@@ -12,15 +12,8 @@ export function random(min: number, max: number): IterableIterator<number> {
     }
 }
 
-export function* chainSync(...iters: IterableIterator<unknown>[]): IterableIterator<unknown> {
-    for (const iter of iters) {
-        for (const el of iter) {
-            yield el;
-        }
-    }
-}
-
-export async function* chainAsync(...iters: AsyncIterableIterator<unknown>[]): AsyncIterableIterator<unknown> {
+export async function* chain(...iters: (Iterable<unknown> | AsyncIterable<unknown>)[])
+    : AsyncIterableIterator<unknown> {
     for (const iter of iters) {
         for await (const el of iter) {
             yield el;
@@ -28,11 +21,14 @@ export async function* chainAsync(...iters: AsyncIterableIterator<unknown>[]): A
     }
 }
 
-export function* zipSync(...iters: IterableIterator<unknown>[]): IterableIterator<unknown> {
+export async function* zip(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[])
+    : AsyncIterableIterator<unknown> {
+    const iters = iterables.map(el => el[Symbol.iterator]() ?? el[Symbol.asyncIterator]())
+
     while (true) {
         let tuple = [];
 
-        for (const iter of iters) {
+        for await (const iter of iters) {
             const cur = iter.next()
             if (cur.done) return;
 
@@ -43,32 +39,8 @@ export function* zipSync(...iters: IterableIterator<unknown>[]): IterableIterato
     }
 }
 
-export async function* zipAsync(...iters: AsyncIterableIterator<unknown>[]): AsyncIterableIterator<unknown> {
-    while (true) {
-        let tuple = [];
-
-        for await (const iter of iters) {
-            const cur = await iter.next()
-            if (cur.done) return;
-
-            tuple.push(cur.value)
-        }
-
-        yield tuple;
-    }
-}
-
-export function* mapSeqSync(
-    iterable: Iterable<unknown>,
-    handlers: ((el: any) => any)[]
-): IterableIterator<unknown> {
-    for (const el of iterable) {
-        yield handlers.reduce((acc, cur) => cur(acc), el);
-    }
-}
-
-export async function* mapSeqAsync(
-    iterable: AsyncIterable<unknown>,
+export async function* mapSeq(
+    iterable: AsyncIterable<unknown> | Iterable<unknown>,
     handlers: ((el: any) => any)[]
 ): AsyncIterableIterator<unknown> {
     for await (const el of iterable) {
