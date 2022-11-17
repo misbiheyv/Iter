@@ -1,216 +1,88 @@
 import * as modifiers from './index';
+import { sleep } from '../../helpers';
 
-let iter: IterableIterator<number>;
-let deepIter: IterableIterator<any>;
-let asyncIter: AsyncIterableIterator<number>;
-let asyncDeepIter: AsyncIterableIterator<any>;
-let asyncFilterIter: AsyncIterableIterator<number>;
-
-describe('Modifiers for iterators', () => {
-    beforeAll(() => {
-        asyncFilterIter = (() => {
-            let i = 0;
-
-            return {
-                [Symbol.asyncIterator]() {
-                    return this;
-                },
-                next: () => {
-                    return new Promise(res => setTimeout(() => res(++i), 100))
-                        .then(res => ({
-                            done: i > 5,
-                            value: i
-                        }))
-                }
-            }
-        })();
+describe('Modifiers for iterables', () => {
+    test('forEach. Should iterates values with passed function executing.', async () => {
+        const res = []
+        await modifiers.forEach([1,2,3], (el) => res.push(el))
+        expect(res).toEqual([1,2,3])
     });
 
-    beforeEach(() => {
-        iter = [1, 2, 3].values();
-        deepIter = [1, [[2], [[3]]]].values();
-
-        asyncIter = (() => {
-            let i = 0;
-
-            return {
-                [Symbol.asyncIterator]() {
-                    return this;
-                },
-                next: () => {
-                    return new Promise(res => setTimeout(() => res(++i), 100))
-                        .then(res => ({
-                            done: i > 3,
-                            value: i * 10
-                        }))
-                }
-            }
-        })();
-
-        asyncDeepIter = (() => {
-            let i = 0;
-
-            return {
-                [Symbol.asyncIterator]() {
-                    return this;
-                },
-                next: () => {
-                    return new Promise(res => setTimeout(() => res(++i), 100))
-                        .then(res => ({
-                            done: i > 2,
-                            value: new Set([i * 10, i * 10 + 1])
-                        }))
-                }
-            }
-        })();
+    test('map. Should maps the values with passed function.', async () => {
+        const res = []
+        await modifiers.forEach(modifiers.map([1,2,3], el => el ** 2), el => res.push(el))
+        expect(res).toEqual([1,4,9])
     });
 
-    test('sync and async map', async () => {
+    test('filter. Should filters the elements with the predicate and yields values passed filter.', async () => {
+        const res = []
+        await modifiers.forEach(modifiers.filter([1,2,3], el => el % 2 === 0), el => res.push(el))
+        expect(res).toEqual([2])
+    });
 
-        expect([...modifiers.mapSync(iter, el => el ** 2)])
-            .toEqual([1, 4, 9]);
+    test('flatten. Should flattens nested iterables to passed level.', async () => {
+        const res = []
+        await modifiers.forEach(modifiers.flatten([[[1]],[2],3], 1), el => res.push(el))
+        expect(res).toEqual([[1], 2, 3])
+    });
 
-        const
-            res = [],
-            it = modifiers.mapAsync(asyncIter, el => el ** 2).asyncValues();
+    test('flatMap. Should maps each element of iterator, and yields the elements of the flatten iterator.', async () => {
+        const res = []
+        //TODO Сделать нормальную типизацию
+        await modifiers.forEach(modifiers.flatMap([[[1]],[2],3], (el: number) => el ** 2), el => res.push(el))
+        expect(res).toEqual([1, 4, 9])
+    });
 
-        for await (const el of it) {
-            res.push(el);
-        }
+    test('take. Should take first N elements and stop iterator.', async () => {
+        const res = []
+        await modifiers.forEach(modifiers.take([1,2,3,4,5], 3), el => res.push(el))
+        expect(res).toEqual([1, 2, 3])
+    });
 
-        expect(res).toEqual([100, 400, 900])
-    })
+    test('cycle. Should repeats iterator endlessly.', async () => {
+        const res = []
+        await modifiers.forEach(
+            modifiers.take(modifiers.cycle([1,2,3]), 7),
+            el => res.push(el)
+        )
+        expect(res).toEqual([1, 2, 3, 1, 2, 3, 1])
+    });
 
-    test('sync and async filter', async () => {
-        expect([...modifiers.filterSync(iter, el => el % 2 === 0)]).toEqual([2]);
 
-        const
-            res = [],
-            it = modifiers.filterAsync(asyncFilterIter, el => el % 2 === 0);
+    test('enumerate. Should yields tuple of current index and element.', async () => {
+        const res = []
+        await modifiers.forEach(
+            modifiers.enumerate([1,2,3]),
+            el => res.push(el)
+        )
+        expect(res).toEqual([[0,1], [1,2], [2,3]])
+    });
 
-        for await (const el of it) {
-            res.push(el)
-        }
+    test('inRange. Should iterates from the passed index N to index M.', async () => {
 
-        expect(res).toEqual([2, 4])
-    })
+        let res = []
+        await modifiers.forEach(
+            modifiers.inRange([1, 2, 3, 4, 5], 1, 3),
+            el => res.push(el)
+        )
+        expect(res).toEqual([2,3,4])
 
-    test('sync and async flatten', async () => {
-        expect([...modifiers.flattenSync([[[1],[2]],[[3]]].values(), 1)])
-            .toEqual([[1], [2], [3]]);
+        res = []
+        await modifiers.forEach(
+            modifiers.inRange([1, 2, 3, 4, 5], 2 ),
+            el => res.push(el)
+        )
+        expect(res).toEqual([3,4,5])
+    });
 
-        expect([...modifiers.flattenSync([[[1],[2]],[[3]]].values(), 2)])
-            .toEqual([1, 2, 3]);
+    test('chunkedForEach. Should work like a regular forEach, but should not block the flow.', async () => {
+        let i = 0;
+        modifiers.chunkedForEach(
+            new Array(50e6),
+            () => i++
+        )
 
-        const
-            res = [],
-            it = modifiers.flattenAsync(asyncDeepIter, 1);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([10, 11, 20, 21])
-    })
-
-    test('sync and async flatMap', async () => {
-
-        expect([...modifiers.flatMapSync(deepIter, (el: any) => el ** 2)])
-            .toEqual([1, 4, 9]);
-
-        const
-            res = [],
-            it = modifiers.flatMapAsync(asyncDeepIter, (el: any) => el ** 2).asyncValues();
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([100, 121, 400, 441])
-    })
-
-    test('sync and async take', async () => {
-        expect([...modifiers.take([1,2,3,4,5].values(), 3).values()])
-            .toEqual([1, 2, 3]);
-
-        const
-            res = [],
-            it = modifiers.take(asyncIter, 2, 'async').asyncValues();
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([10, 20])
-    })
-
-    test('async and async enumerate', async () => {
-        expect([...modifiers.enumerate(['a', 'b', 'c'][Symbol.iterator]())])
-            .toEqual([[0, 'a'], [1, 'b'], [2, 'c']]);
-
-        const
-            res = [],
-            it = modifiers.enumerate(asyncIter);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([[0, 10], [1, 20], [2, 30]])
-    })
-
-    test('async and async inRange', async () => {
-
-        expect([...modifiers.inRange([1,2,3,4,5,6].values(), 1, 3)])
-            .toEqual([2, 3, 4]);
-
-        const
-            res = [],
-            it = modifiers.inRange(asyncIter, 1, 3);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([20, 30])
-    })
-
-    test('async and async forEach', async () => {
-        let res = [];
-        modifiers.forEachSync([1,2,3].values(), async (el: number) => {
-            res.push(el + 1)
-        });
-        expect(res).toEqual([2, 3, 4])
-
-        res = [];
-        await modifiers.forEachAsync(asyncIter, (el: number) => {
-            res.push(el + 1)
-        });
-
-        expect(res).toEqual([11,21,31])
-    })
-
-    test('chunkedForEach', async () => {
-        let res = [];
-        await modifiers.chunkedForEach([1,2,3].values(), (el: number) => {
-            res.push(el + 1)
-        });
-        expect(res).toEqual([2, 3, 4])
-    })
-
-    test('cycle', async () => {
-        expect([...modifiers.take(modifiers.cycleSync([1,2,3].values()), 6)])
-            .toEqual([1, 2, 3, 1, 2, 3]);
-
-        let
-            res = [],
-            it = modifiers.take(modifiers.cycleAsync(asyncIter), 6);
-
-        for await (const el of it) {
-            res.push(el)
-        }
-
-        expect(res).toEqual([10, 20, 30, 10, 20, 30]);
-    })
-
+        await sleep(100);
+        expect(i).toBeGreaterThan(0);
+    });
 })

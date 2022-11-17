@@ -1,321 +1,69 @@
-import Iter from '..';
-
-import {
-
-    isSyncIterable,
-    isAsyncIterable
-
-} from '../../helpers';
-import {Modes} from "../interface";
+import { isIterable, cast, sleep } from '../../helpers';
 
 
-
-export function mapSync<R, V>(
-    iter: IterableIterator<V>,
-    cb: (el: V, index?: number, iter?: unknown) => R
-): Iter<R> {
-    let
-        i = 0;
-
-    const mapIter = {
-        [Symbol.iterator]() {
-            return this;
-        },
-        next: () => {
-            let cur = iter.next();
-
-            return {
-                value: !cur.done ? cb(cur.value, i++, iter) : undefined,
-                done: cur.done
-            };
-        }
+export async function* map<T, R>(
+    iter: Iterable<T> | AsyncIterable<T>,
+    cb: (el: T, index?: number, iter?: unknown) => R
+): AsyncGenerator<R> {
+    for await (const el of iter) {
+        yield cb(el);
     }
-
-    return new Iter<R>(mapIter);
 }
 
-export function mapAsync<R, V>(
-    iter: AsyncIterableIterator<V>,
-    cb: (el: V, index?: number, iter?: unknown) => R
-): Iter<R> {
-    let
-        i = 0;
-
-    const mapIter = {
-        [Symbol.asyncIterator]() {
-            return this;
-        },
-        next: () => {
-            return iter.next().then(res => {
-                if (res.done) {
-                    return { done: true }
-                }
-                return {
-                    done: false,
-                    value: cb(res.value, i++, iter)
-                }
-            })
-        }
-    }
-
-    return new Iter(mapIter, 'async');
-}
-
-
-
-export function filterSync<V>(
-    iter: IterableIterator<V>,
+export async function* filter<V>(
+    iter: Iterable<V> | AsyncIterable<V>,
     cb: (el: V, index?: number, iter?: unknown) => boolean
-): Iter<V> {
-    let i = 0;
-
-    const filterIter = {
-        [Symbol.iterator]() {
-            return this;
-        },
-        next: () => {
-            let cur = iter.next();
-
-            while (!cur.done && !cb(cur.value, i++, iter)) {
-                cur = iter.next();
-            }
-
-            return cur;
-        }
+): AsyncGenerator<V> {
+    for await (const el of iter) {
+        if (!cb(el)) continue;
+        yield el;
     }
-
-    return new Iter(filterIter);
 }
 
-export function filterAsync<V>(
-    iter: AsyncIterableIterator<V>,
-    cb: (el: V, index?: number, iter?: unknown) => boolean
-): Iter<V> {
-    let i = 0;
-
-    const filterIter = <AsyncIterable<V>>(async function *() {
-        for await (const el of iter) {
-            if(cb(<V>el, i++, iter)) yield el
-        }
-    })()
-
-    return new Iter(filterIter, 'async');
-}
-
-
-
-export function flattenSync<R>(
-    iter: IterableIterator<unknown>,
+//TODO Сделать нормальную типизацию
+export async function* flatten<T>(
+    iter: Iterable<T> | AsyncIterable<T>,
     depth: number = 1
-): Iter<R> {
-
-    function *flat(arr: Iterable<any>, depth) {
-        for (const el of arr) {
-            if (isSyncIterable(el) && typeof el !== 'string' && depth > 0)
-                yield* flat(el, depth - 1)
-            else
-                yield el
-        }
+): AsyncGenerator<T> {
+    for await (const el of iter) {
+        if (isIterable(el) && typeof el !== 'string' && depth > 0)
+            yield* flatten(cast(el), depth - 1)
+        else
+            yield el
     }
-
-    return new Iter(flat(iter, depth));
 }
 
-export function flattenAsync<R>(
-    iter: AsyncIterableIterator<unknown>,
-    depth: number = 1
-): Iter<R> {
-    async function *flatten(arr: AsyncIterable<any> | Iterable<any>, depth) {
-        if (isAsyncIterable(arr)) {
-            for await (const el of arr) {
-                if ((isSyncIterable(el) || isAsyncIterable(el)) && typeof el !== 'string' && depth > 0) 
-                    yield* flatten(el, depth - 1)
-                else
-                    yield el
-            }
-        } else if (isSyncIterable(arr)) {
-            for (const el of arr) {
-                if ((isSyncIterable(el) || isAsyncIterable(el)) && typeof el !== 'string' && depth > 0)
-                    yield* flatten(el, depth - 1)
-                else
-                    yield el
-            }
-        }
-    }
-
-    return new Iter(flatten(iter, depth));
-}
-
-
-
-export function flatMapSync<T, R>(
-    iter: IterableIterator<T>,
+//TODO Сделать нормальную типизацию
+export async function* flatMap<T, R>(
+    iter: Iterable<T> | AsyncIterable<T>,
     cb: (el: unknown, index?: number, iter?: unknown) => R
-) : Iter<R> {
+) : AsyncGenerator<R> {
 
-    function *flatMapIter(arr: Iterable<unknown | Iterable<unknown>>) {
-        for (const el of arr) {
-            if (isSyncIterable(el) && typeof el !== 'string')
-                yield* flatMapIter(el)
-            else
-                yield cb(el)
+    for await (const el of iter) {
+        if (isIterable(el) && typeof el !== 'string') {
+            yield* flatMap(el, cb)
+        } else {
+            yield cb(<T>el)
         }
     }
-
-    return new Iter(flatMapIter(iter));
 }
 
-export function flatMapAsync<T, R>(
-    iter: AsyncIterableIterator<T>,
-    cb: (el: unknown, index?: number, iter?: unknown) => R
-) : Iter<R> {
-
-    function *syncFlatMapIter(arr: Iterable<unknown | Iterable<unknown> | AsyncIterable<unknown>>) {
-        for (const el of arr) {
-            if (isAsyncIterable(el) && typeof el !== 'string') {
-                yield* asyncFlatMapIter(el)
-
-            } if (isSyncIterable(el) && typeof el !== 'string') {
-                yield* syncFlatMapIter(el)
-            } else {
-                yield cb(<T>el)
-            }
-        }
-    }
-
-    async function *asyncFlatMapIter(arr: AsyncIterable<unknown | Iterable<unknown> | AsyncIterable<unknown>>) {
-        for await (const el of arr) {
-            if (isAsyncIterable(el) && typeof el !== 'string') {
-                yield* asyncFlatMapIter(el)
-
-            } if (isSyncIterable(el) && typeof el !== 'string') {
-                yield* syncFlatMapIter(el)
-            } else {
-                yield cb(<T>el)
-            }
-        }
-    }
-
-    return new Iter(asyncFlatMapIter(iter), 'async')
-}
-
-
-export function take<T>(
-    iter: IterableIterator<T> | AsyncIterableIterator<T>,
-    count: number,
-    mode?: Modes
-): Iter<T> {
-
+export async function* take<T>(
+    iter: Iterable<T> | AsyncIterable<T>,
+    count: number
+): AsyncGenerator<T> {
     let i = 0;
 
-    if (isSyncIterable(iter) || mode === 'sync') {
-        return new Iter(<Iterable<T>>{
-            [Symbol.iterator](): IterableIterator<T> {
-                return this;
-            },
-            next: () => {
-                if (i++ < count) {
-                    return iter.next()
-                }
-                return {done: true, value: undefined};
-            }
-        })
-    }
-
-    if (mode === 'async' || isAsyncIterable(iter)) {
-        return new Iter(<AsyncIterable<T>>{
-            [Symbol.asyncIterator]() {
-                return this;
-            },
-            next: () => {
-                if (i++ < count) {
-                    return iter.next()
-                }
-                return Promise.resolve({done: true, value: undefined});
-            }
-        })
+    for await (const el of iter) {
+        if (i++ >= count) {
+            return;
+        }
+        yield el;
     }
 }
 
-
-export function enumerate<T>(iter: IterableIterator<T> | AsyncIterableIterator<T>): Iter<[number, T]> {
-    let i = 0;
-
-    if (isSyncIterable(iter)) {
-        const gen = function* () {
-            for (const el of iter) {
-                yield <[number, T]>[i++, el];
-            }
-        }
-        return new Iter(gen());
-    }
-
-    if (isAsyncIterable(iter)) {
-        const gen = async function* () {
-            for await (const el of iter) {
-                yield <[number, T]>[i++, el];
-            }
-        }
-
-        return new Iter(gen());
-    }
-
-    throw new Error('Passed argument is not iterable.')
-}
-
-
-export function inRange<T>(
-    iter: IterableIterator<T> | AsyncIterableIterator<T>,
-    start: number,
-    end?: number
-): Iter<T> {
-    if (isSyncIterable(iter)) {
-        let i = 0;
-        const gen = function* () {
-            for (const el of iter) {
-                if (i++ < start) continue;
-                if (end != null && i > end + 1) return;
-                yield el;
-            }
-        }
-        return new Iter(gen())
-    }
-
-    if (isAsyncIterable(iter)) {
-        let i = 0;
-        const gen = async function* () {
-            for await (const el of iter) {
-                if (i++ < start) continue;
-                if (end != null && i > end + 1) return;
-                yield el;
-            }
-        }
-
-        return new Iter(gen());
-    }
-
-    throw new Error('Passed argument is not iterable.');
-}
-
-
-export function forEachSync<T>(
-    iter: IterableIterator<T>,
-    cb: (el: unknown, index?: number, iter?: unknown) => void
-): void {
-    let i = 0;
-
-    const gen = function* () {
-        for (const el of iter) {
-            yield el;
-        }
-    }
-    for (const el of gen()) {
-        cb(el, i++, iter)
-    }
-}
-
-export async function forEachAsync<T>(
-    iter: AsyncIterableIterator<T>,
+export async function forEach<T>(
+    iter: AsyncIterable<T> | Iterable<T>,
     cb: (el: unknown, index: number, iter: unknown) => void
 ): Promise<void> {
     let i = 0;
@@ -334,23 +82,32 @@ export async function forEachAsync<T>(
 }
 
 
-export function *cycleSync<T>(iter: IterableIterator<T>) {
-    let
-        cache = [],
-        i = 0;
+export async function* enumerate<T>(iter: Iterable<T> | AsyncIterable<T>): AsyncGenerator<[number, T]> {
+    let i = 0;
 
-    while (true) {
-        for (const el of iter) {
-            cache.push(el);
-            yield el;
-        }
-
-        yield cache[i++ % cache.length];
+    for await (const el of iter) {
+        yield [i++, el];
     }
 }
 
-export async function *cycleAsync<T>(iter: AsyncIterableIterator<T>) {
+
+export async function* inRange<T>(
+    iter: Iterable<T> | AsyncIterable<T>,
+    start: number,
+    end?: number
+): AsyncGenerator<T> {
+    let i = 0;
+
+    for await (const el of iter) {
+        if (i++ < start) continue;
+        if (end != null && i > end + 1) return;
+        yield el;
+    }
+}
+
+export async function* cycle<T>(iterable: AsyncIterable<T> | Iterable<T>): AsyncGenerator<T> {
     let
+        iter = iterable[Symbol.iterator](),
         cache = [],
         i = 0;
 
@@ -364,15 +121,15 @@ export async function *cycleAsync<T>(iter: AsyncIterableIterator<T>) {
     }
 }
 
-export function chunkedForEach<T, I extends IterableIterator<T> | AsyncIterableIterator<T>>(
+export async function chunkedForEach<T, I extends Iterable<T> | AsyncIterable<T>>(
     iter: I,
-    cb: (el: T, index: number, iter: I extends IterableIterator<T> ? IterableIterator<T> : AsyncIterableIterator<T>) => void
+    cb: (el: T, index: number, iter: I extends Iterable<T> ? Iterable<T> : AsyncIterable<T>) => void
 ) {
     return executor(_forEach(iter, cb), undefined);
 }
 
 async function *_forEach<T>(
-    iter: AsyncIterableIterator<T> | IterableIterator<T>,
+    iter: AsyncIterable<T> | Iterable<T>,
     cb: (el: T, index?: number, iter?: unknown) => void
 ): AsyncGenerator {
     let time = Date.now();
@@ -411,10 +168,3 @@ async function executor(iter: Generator | AsyncGenerator, value) {
             return executor(iter, res.value);
         })
 }
-
-function sleep(ms) {
-    return new Promise(res => setTimeout(res, ms));
-}
-
-
-//! ================= BE CAREFUL! DANGEROUS ZONE! FUNCTIONS BELOW AREN'T TESTED YET ================= !//
