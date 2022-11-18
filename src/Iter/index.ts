@@ -1,4 +1,4 @@
-import type { Collection } from './interface';
+import type {Collection, Num} from './interface';
 
 import * as modifiers from './modifiers';
 
@@ -18,8 +18,7 @@ import {
     isReversible,
 
 } from '../helpers';
-import {forEach, take} from "./modifiers";
-
+import {AnyIterable, Flat, ReqFlat} from "./interface";
 
 export default class Iter<T> {
 
@@ -71,9 +70,9 @@ export default class Iter<T> {
         return new Iter(modifiers.filter(this.collection, cb));
     }
 
-    public flatMap<R>(
-        cb: (el: T, index?: number, collection?: typeof this.collection) => R,
-    ): Iter<R> {
+    public flatMap<
+        F extends (el: unknown, index?: number, iter?: unknown) => any
+    >(cb: F) {
         return new Iter(modifiers.flatMap(this.collection, cb));
     }
 
@@ -89,7 +88,7 @@ export default class Iter<T> {
         return modifiers.chunkedForEach(this.collection, cb);
     }
 
-    public flatten(depth: number): Iter<T> {
+    public flatten<N extends Num>(depth: N) {
         return new Iter(modifiers.flatten(this.collection, depth));
     }
 

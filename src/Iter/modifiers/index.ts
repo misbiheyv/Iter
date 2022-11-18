@@ -1,4 +1,5 @@
 import { isIterable, cast, sleep } from '../../helpers';
+import {AnyIterable, Flat, Num, ReqFlat} from "../interface";
 
 
 export async function* map<T, R>(
@@ -20,30 +21,31 @@ export async function* filter<V>(
     }
 }
 
-//TODO Сделать нормальную типизацию
-export async function* flatten<T>(
-    iter: Iterable<T> | AsyncIterable<T>,
-    depth: number = 1
-): AsyncGenerator<T> {
+export async function* flatten<T, N extends Num = 1>(
+
+    iter: AnyIterable<T>,
+    depth: N
+
+): AsyncGenerator<ReqFlat<AnyIterable<T>, N>> {
     for await (const el of iter) {
         if (isIterable(el) && typeof el !== 'string' && depth > 0)
-            yield* flatten(cast(el), depth - 1)
+            yield* flatten(el, cast(depth - 1))
         else
-            yield el
+            yield cast(el);
     }
 }
 
-//TODO Сделать нормальную типизацию
-export async function* flatMap<T, R>(
-    iter: Iterable<T> | AsyncIterable<T>,
-    cb: (el: unknown, index?: number, iter?: unknown) => R
-) : AsyncGenerator<R> {
+export async function* flatMap<
 
-    for await (const el of iter) {
+    T extends AnyIterable<any>,
+    F extends (el: T extends AnyIterable<infer V> ? Flat<V> : unknown, index?: number, iter?: T) => any
+
+>(iter: T, cb: F): AsyncGenerator<F extends (...arg: any) => infer R ? R : unknown> {
+    for await (const el of cast<any>(iter)) {
         if (isIterable(el) && typeof el !== 'string') {
             yield* flatMap(el, cb)
         } else {
-            yield cb(<T>el)
+            yield cast(cb(el))
         }
     }
 }
