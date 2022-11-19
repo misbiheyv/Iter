@@ -1,11 +1,30 @@
+import { IterableType } from "./interface";
+
 import Iter from "./iter";
-import { zip } from "./iter/combinators";
+
+import { intoIterator } from "./into-iterator";
 
 
-(async () => {
-    for await (const el of zip(new Set(['a', 'b', 'c']), [1,2,3])) console.log(el);
+export default function intoIter(obj: boolean): Iter<number>;
 
-    for await (const el of Iter.zip(['a', 'b', 'c'], [1,2,3])) console.log(el);
+export default function intoIter(obj: null | undefined): Iter<undefined>;
 
-    for await (const el of new Iter([1,2,3]).zip(['a', 'b', 'c'])) console.log(el);
-})()
+export default function intoIter(obj: number): Iter<number>;
+
+export default function intoIter(obj: string): Iter<string>;
+
+export default function intoIter<T = unknown>(obj: ArrayLike<T>): Iter<T>;
+
+export default function intoIter<T extends Iterable<any>>(obj: T): Iter<IterableType<T>>;
+
+export default function intoIter<T extends AsyncIterable<any>>(obj: T): Iter<IterableType<T>>;
+
+export default function intoIter<T extends Object>(obj: T): Iter<IterableType<T>>;
+
+export default function intoIter(obj: unknown): Iter<unknown> {
+    return new Iter(intoIterator(obj));
+}
+
+export { intoIterator };
+
+export * from './iterators';

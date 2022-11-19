@@ -1,4 +1,4 @@
-import type { IterableType } from "../iter/interface";
+import type { IterableType } from "../interface";
 import Range from "../range";
 import { cast, isArrayLike, isIterable, isSyncIterable } from "../helpers";
 

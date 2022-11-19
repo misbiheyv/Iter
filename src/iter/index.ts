@@ -1,14 +1,15 @@
-import type { AnyIterable, Collection, Num, ExtractIterablesType } from './interface';
+import type { AnyIterable, Collection, Num, ExtractIterablesType } from '../interface';
 
-import intoIterator from "../into-iterator";
+import { intoIterator } from "../into-iterator";
 
-import * as modifiers from './modifiers';
+import {
 
-import * as collectors from './collectors';
+    modifiers,
+    collectors,
+    aggregators,
+    combinators
 
-import * as aggregators from './aggregators';
-
-import * as combinators from './combinators';
+} from '../iterators';
 
 import {
 

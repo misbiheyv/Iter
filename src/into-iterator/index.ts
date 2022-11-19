@@ -1,3 +1,1 @@
-import { intoIterator } from "./into-iterator";
-
-export default intoIterator;
+export { intoIterator } from "./into-iterator";

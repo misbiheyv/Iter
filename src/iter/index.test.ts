@@ -1,7 +1,7 @@
 import Iter from "./index";
 import { sleep } from "../helpers";
-import {forEach} from "./modifiers";
-import * as combinators from "./combinators";
+import {forEach} from "../iterators/modifiers";
+import * as combinators from "../iterators/combinators";
 
 const createReversible = () => ({
     *[Symbol.iterator]() {

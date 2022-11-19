@@ -1,4 +1,4 @@
-import type { ExtendableCollection, Reversible } from "../iter/interface";
+import type { ExtendableCollection, Reversible } from "../interface";
 
 
 export function cast<T>(obj: unknown): T {

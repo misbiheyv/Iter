@@ -1,5 +1,5 @@
 import { isIterable, cast, sleep } from '../../helpers';
-import {AnyIterable, Flat, Num, ReqFlat} from "../interface";
+import { AnyIterable, Flat, Num, ReqFlat } from "../../interface";
 
 
 export async function* map<T, R>(

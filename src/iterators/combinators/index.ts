@@ -4,7 +4,7 @@ import type {
     ExtractIterablesType,
     ExtractZipType
 
-} from "../interface";
+} from "../../interface";
 
 import { cast } from "../../helpers";
 

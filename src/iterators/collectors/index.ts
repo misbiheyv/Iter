@@ -3,7 +3,7 @@ import type {
     Collection, 
     ExtendableCollection 
 
-} from '../interface';
+} from '../../interface';
 
 import { addToCollection } from "../../helpers";
 
