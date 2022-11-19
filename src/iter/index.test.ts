@@ -63,7 +63,7 @@ describe('Iter', () => {
 
         test('reverse irreversible', () => {
             expect(() => new Iter(new Set([1,2,3])).reverse())
-                .toThrowError('Iter is irreversible.');
+                .toThrowError('iter is irreversible.');
         });
 
         test('forEach', async () => {

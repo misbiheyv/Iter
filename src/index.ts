@@ -1,5 +1,5 @@
-import Iter from "./Iter";
-import { zip } from "./Iter/combinators";
+import Iter from "./iter";
+import { zip } from "./iter/combinators";
 
 
 (async () => {

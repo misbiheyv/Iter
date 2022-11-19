@@ -1,5 +1,5 @@
-import * as helpers from './index';
-import { forEach } from "../Iter/modifiers";
+import * as helpers from '.';
+import { forEach } from "../iter/modifiers";
 
 describe('helpers', () => {
     test('createReverseIterator', async () => {

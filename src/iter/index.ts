@@ -1,5 +1,7 @@
 import type { AnyIterable, Collection, Num, ExtractIterablesType } from './interface';
 
+import intoIterator from "../into-iterator";
+
 import * as modifiers from './modifiers';
 
 import * as collectors from './collectors';
@@ -10,7 +12,6 @@ import * as combinators from './combinators';
 
 import {
 
-    intoIterator,
     createReverseIterator,
     isIterable,
     isAsyncIterable,
@@ -168,7 +169,7 @@ export default class Iter<T> {
         if (isSyncIterable(this.iter)) {
             return this.iter;
         }
-        throw new Error('Iter does not have [Symbol.iterator].')
+        throw new Error('iter does not have [Symbol.iterator].')
     }
 
     [Symbol.asyncIterator](): AsyncIterableIterator<T> {
@@ -176,7 +177,7 @@ export default class Iter<T> {
             return this.iter;
         }
 
-        throw new Error('Iter does not have [Symbol.asyncIterator].')
+        throw new Error('iter does not have [Symbol.asyncIterator].')
     }
 
     values(): AnyIterable<T> {
@@ -184,7 +185,7 @@ export default class Iter<T> {
             return this.iter;
         }
 
-        throw new Error('Iter is not iterable.')
+        throw new Error('iter is not iterable.')
     }
 
     reverseValues(): AnyIterable<T> {
@@ -192,7 +193,7 @@ export default class Iter<T> {
             return createReverseIterator(this.collection);
         }
 
-        throw new Error('Iter is irreversible.')
+        throw new Error('iter is irreversible.')
     }
 
     reverse(): Iter<T> {
@@ -200,7 +201,7 @@ export default class Iter<T> {
             return new Iter(createReverseIterator(this.collection));
         }
 
-        throw new Error('Iter is irreversible.')
+        throw new Error('iter is irreversible.')
     }
 
     //#endregion

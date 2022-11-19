@@ -13,6 +13,8 @@ export type ExtendableCollection<T> = {
     addToCollection(value: T): void
 };
 
+export type IterableType<T> = T extends AnyIterable<infer T> ? T : unknown;
+
 export type ExtractZipType<A extends AnyIterable<any>[]> = {
     0: [],
     1: A extends [...infer T] ? ReqType<T, []> : unknown;
@@ -43,10 +45,6 @@ export type ReqFlat<I, N extends Num> = {
 export type Num = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 
 type Dec<N extends Num> = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9][N];
-
-type Inc<N extends Num> = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11][N];
-
-type IterableType<T> = T extends AnyIterable<infer T> ? T : unknown;
 
 type Head<A extends any[]> = {
     0: never,
