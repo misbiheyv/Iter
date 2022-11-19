@@ -1,4 +1,4 @@
-import type {Collection, Num} from './interface';
+import type { AnyIterable, Collection, Num, ExtractIterablesType } from './interface';
 
 import * as modifiers from './modifiers';
 
@@ -16,13 +16,14 @@ import {
     isAsyncIterable,
     isSyncIterable,
     isReversible,
+    cast
 
 } from '../helpers';
-import {AnyIterable, Flat, ReqFlat} from "./interface";
+
 
 export default class Iter<T> {
 
-    protected collection: Iterable<T> | AsyncIterable<T>;
+    protected collection: AnyIterable<T>;
 
     protected iter: IterableIterator<T> | AsyncIterableIterator<T>;
 
@@ -30,17 +31,15 @@ export default class Iter<T> {
         return modifiers.random(min, max);
     }
 
-    //TODO ВЫВЕСТИ ТИПЫ
-    public static seq(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
-        return new Iter(combinators.chain(...iterables));
+    public static seq<T extends AnyIterable<any>[]>(...iterables: T) {
+        return new Iter(combinators.seq(...iterables));
     }
 
-    //TODO ВЫВЕСТИ ТИПЫ
-    public static zip(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
+    public static zip<T extends AnyIterable<any>[]>(...iterables: T) {
         return new Iter(combinators.zip(...iterables));
     }
 
-    constructor(iterable:  Iterable<T> | AsyncIterable<T>) {
+    constructor(iterable:  AnyIterable<T>) {
         this.collection = iterable;
 
         if (isAsyncIterable(this.collection)) {
@@ -112,13 +111,11 @@ export default class Iter<T> {
 
     //#region Combinators
 
-    //TODO ВЫВЕСТИ ТИПЫ
-    chain(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
-        return new Iter(combinators.chain(this.collection, ...iterables));
+    chain<V extends AnyIterable<any>[]>(...iterables: V): Iter<T | ExtractIterablesType<V>> {
+        return cast(new Iter(combinators.seq(this.collection, ...iterables)));
     }
 
-    //TODO ВЫВЕСТИ ТИПЫ
-    zip(...iterables: (Iterable<unknown> | AsyncIterable<unknown>)[]): Iter<unknown> {
+    zip<V extends AnyIterable<any>[]>(...iterables: V) {
         return new Iter(combinators.zip(this.collection, ...iterables));
     }
 
@@ -182,7 +179,7 @@ export default class Iter<T> {
         throw new Error('Iter does not have [Symbol.asyncIterator].')
     }
 
-    values(): IterableIterator<T> | AsyncIterableIterator<T> {
+    values(): AnyIterable<T> {
         if (isIterable(this.iter)) {
             return this.iter;
         }
@@ -190,7 +187,7 @@ export default class Iter<T> {
         throw new Error('Iter is not iterable.')
     }
 
-    reverseValues(): IterableIterator<T> | AsyncIterableIterator<T> {
+    reverseValues(): AnyIterable<T> {
         if (isReversible(this.collection)) {
             return createReverseIterator(this.collection);
         }

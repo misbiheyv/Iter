@@ -13,7 +13,7 @@ export const isIterable = (obj: unknown): obj is AsyncIterable<any> | Iterable<a
     isAsyncIterable(obj) || isSyncIterable(obj);
 
 
-export const isReversible = (o: any): o is Reversible =>
+export const isReversible = (o: any): o is Reversible<any> =>
     o instanceof Array || typeof o.reverse === 'function';
 
 
@@ -66,9 +66,6 @@ export function createReverseIterator<T>(iterable: Iterable<T> | AsyncIterable<T
         return iterable.reverse();
     }
 }
-
-
-
 
 export function addToCollection<T>(this: ExtendableCollection<T>, el: T) {
     if ('add' in this.collection) {

@@ -5,7 +5,7 @@ describe('Combinators for iterators', () => {
     test('chain. Should links some iterators together.', async () => {
         const res = [];
         await forEach(
-            combinators.chain([1,2,3], new Set([4,5,6])),
+            combinators.seq([1,2,3], new Set([4,5,6])),
             el => res.push(el)
         );
         expect(res).toEqual([1,2,3,4,5,6]);
