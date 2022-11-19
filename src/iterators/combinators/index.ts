@@ -2,9 +2,10 @@ import type {
 
     AnyIterable,
     ExtractIterablesType,
-    ExtractZipType
 
 } from "../../interface";
+
+import type { ExtractZipType } from "./interface.combinators";
 
 import { cast } from "../../helpers";
 
